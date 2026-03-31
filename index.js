@@ -7,7 +7,7 @@ import { SCHEDULE } from './config.js';
 log('info', '🚀 Shopify Auto-Tagger started');
 log('info', `📅 Schedule: "${SCHEDULE}"`);
 
-runAllRules();
+// Removed the immediate runAllRules() call — runs on schedule only
 cron.schedule(SCHEDULE, () => {
   log('info', '⏰ Scheduled run triggered');
   runAllRules();
