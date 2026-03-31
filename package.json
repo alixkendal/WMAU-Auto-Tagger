@@ -1,0 +1,17 @@
+{
+  "name": "shopify-auto-tagger",
+  "version": "1.0.0",
+  "description": "Automated rule-based product tagging service for Shopify",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "run-once": "node -e \"import('./tagger.js').then(m => m.runAllRules())\""
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
