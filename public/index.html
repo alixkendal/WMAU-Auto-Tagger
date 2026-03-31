@@ -6,119 +6,32 @@
 <title>Auto-Tagger Rules</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 14px;
-    color: #1a1a1a;
-    background: #f6f6f7;
-    min-height: 100vh;
-  }
-
-  .topbar {
-    background: #fff;
-    border-bottom: 1px solid #e1e3e5;
-    padding: 0 24px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .topbar-title { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; background: #f6f6f7; min-height: 100vh; }
+  .topbar { background: #fff; border-bottom: 1px solid #e1e3e5; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-title { font-size: 16px; font-weight: 600; }
   .topbar-sub { font-size: 13px; color: #6d7175; margin-top: 1px; }
-
   .page { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
-
-  .card {
-    background: #fff;
-    border: 1px solid #e1e3e5;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    overflow: hidden;
-  }
-
-  .card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #e1e3e5;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .card { background: #fff; border: 1px solid #e1e3e5; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e1e3e5; display: flex; align-items: center; justify-content: space-between; }
   .card-title { font-weight: 600; font-size: 14px; }
-
   .rule-list { list-style: none; }
-  .rule-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    border-bottom: 1px solid #f1f1f1;
-    transition: background 0.1s;
-  }
+  .rule-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #f1f1f1; transition: background 0.1s; }
   .rule-item:last-child { border-bottom: none; }
   .rule-item:hover { background: #fafafa; }
-
-  .rule-toggle {
-    flex-shrink: 0;
-    width: 36px; height: 20px;
-    background: #e1e3e5;
-    border-radius: 10px;
-    position: relative;
-    cursor: pointer;
-    border: none;
-    transition: background 0.2s;
-  }
+  .rule-toggle { flex-shrink: 0; width: 36px; height: 20px; background: #e1e3e5; border-radius: 10px; position: relative; cursor: pointer; border: none; transition: background 0.2s; }
   .rule-toggle.on { background: #008060; }
-  .rule-toggle::after {
-    content: '';
-    position: absolute;
-    width: 16px; height: 16px;
-    background: #fff;
-    border-radius: 50%;
-    top: 2px; left: 2px;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
+  .rule-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
   .rule-toggle.on::after { transform: translateX(16px); }
-
   .rule-info { flex: 1; min-width: 0; }
-  .rule-desc { font-weight: 500; font-size: 14px; color: #1a1a1a; }
-  .rule-detail { font-size: 12px; color: #6d7175; margin-top: 2px; }
-
-  .rule-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-  .tag-pill {
-    background: #f1f1f1;
-    color: #1a1a1a;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
+  .rule-desc { font-weight: 500; font-size: 14px; }
+  .rule-detail { font-size: 12px; color: #6d7175; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rule-tags { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+  .tag-pill { background: #f1f1f1; color: #1a1a1a; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; }
   .rule-actions { display: flex; gap: 8px; flex-shrink: 0; }
-  .btn-icon {
-    background: none;
-    border: 1px solid #e1e3e5;
-    border-radius: 6px;
-    width: 32px; height: 32px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: #6d7175;
-    font-size: 16px;
-    transition: all 0.1s;
-  }
+  .btn-icon { background: none; border: 1px solid #e1e3e5; border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6d7175; font-size: 15px; transition: all 0.1s; }
   .btn-icon:hover { background: #f6f6f7; color: #1a1a1a; }
   .btn-icon.danger:hover { background: #fff4f4; color: #d82c0d; border-color: #d82c0d; }
-
-  .btn {
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.1s;
-  }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.1s; }
   .btn-primary { background: #008060; color: #fff; border-color: #008060; }
   .btn-primary:hover { background: #006e52; }
   .btn-secondary { background: #fff; color: #1a1a1a; border-color: #c9cccf; }
@@ -126,76 +39,41 @@
   .btn-run { background: #f1f1f1; color: #1a1a1a; border-color: #e1e3e5; }
   .btn-run:hover { background: #e1e3e5; }
   .btn-run.running { opacity: 0.6; cursor: not-allowed; }
-
-  .empty-state {
-    padding: 48px 20px;
-    text-align: center;
-    color: #6d7175;
-  }
+  .btn-link { background: none; border: none; color: #008060; font-size: 13px; cursor: pointer; padding: 0; font-weight: 500; }
+  .btn-link:hover { text-decoration: underline; }
+  .empty-state { padding: 48px 20px; text-align: center; color: #6d7175; }
   .empty-state p { font-size: 14px; margin-top: 8px; }
 
-  /* Modal */
-  .modal-backdrop {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
   .modal-backdrop.open { display: flex; }
-  .modal {
-    background: #fff;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 520px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  }
-  .modal-header {
-    padding: 20px 20px 16px;
-    border-bottom: 1px solid #e1e3e5;
-    display: flex; justify-content: space-between; align-items: center;
-  }
+  .modal { background: #fff; border-radius: 8px; width: 100%; max-width: 580px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column; }
+  .modal-header { padding: 20px 20px 16px; border-bottom: 1px solid #e1e3e5; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
   .modal-title { font-size: 16px; font-weight: 600; }
-  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-  .modal-footer {
-    padding: 16px 20px;
-    border-top: 1px solid #e1e3e5;
-    display: flex; justify-content: flex-end; gap: 8px;
-  }
-
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid #e1e3e5; display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
   .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-label { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+  .form-label { font-size: 13px; font-weight: 500; }
   .form-hint { font-size: 12px; color: #6d7175; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .section-label { font-size: 11px; font-weight: 600; color: #6d7175; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  input[type="text"], select { width: 100%; padding: 8px 12px; border: 1px solid #c9cccf; border-radius: 6px; font-size: 14px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.15s; font-family: inherit; }
+  input:focus, select:focus { border-color: #008060; box-shadow: 0 0 0 2px rgba(0,128,96,0.15); }
 
-  input[type="text"], select, textarea {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #c9cccf;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #1a1a1a;
-    background: #fff;
-    outline: none;
-    transition: border-color 0.15s;
-    font-family: inherit;
-  }
-  input:focus, select:focus, textarea:focus { border-color: #008060; box-shadow: 0 0 0 2px rgba(0,128,96,0.15); }
+  .conditions-list { display: flex; flex-direction: column; gap: 6px; }
+  .condition-row { display: flex; align-items: center; gap: 8px; }
 
-  .status-bar {
-    background: #f6f6f7;
-    border: 1px solid #e1e3e5;
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #6d7175;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  /* AND/OR toggle pill */
+  .logic-toggle { flex-shrink: 0; display: flex; border: 1px solid #c9cccf; border-radius: 6px; overflow: hidden; }
+  .logic-btn { background: #fff; border: none; padding: 0 10px; height: 36px; font-size: 12px; font-weight: 600; cursor: pointer; color: #6d7175; transition: all 0.15s; }
+  .logic-btn.active-or  { background: #e3f1fd; color: #0d5c8a; }
+  .logic-btn.active-and { background: #e6f4ee; color: #006e52; }
+  .logic-btn:not(.active-or):not(.active-and):hover { background: #f6f6f7; }
+  .logic-spacer { flex-shrink: 0; width: 57px; } /* same width as .logic-toggle so rows align */
+
+  .condition-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+  .condition-remove { background: none; border: none; color: #8c9196; cursor: pointer; font-size: 20px; line-height: 1; flex-shrink: 0; padding: 0 2px; }
+  .condition-remove:hover { color: #d82c0d; }
+
+  .status-bar { background: #f6f6f7; border: 1px solid #e1e3e5; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #6d7175; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #008060; flex-shrink: 0; }
   .status-dot.idle { background: #8c9196; }
 </style>
@@ -211,7 +89,6 @@
 </div>
 
 <div class="page">
-
   <div class="status-bar">
     <div class="status-dot" id="status-dot"></div>
     <span id="status-text">Ready — rules run every hour automatically</span>
@@ -223,16 +100,15 @@
       <button class="btn btn-primary" onclick="openModal()">+ Add rule</button>
     </div>
     <ul class="rule-list" id="rule-list">
-      <li class="empty-state" id="empty-state">
+      <li class="empty-state">
         <div style="font-size:32px">🏷</div>
         <p>No rules yet. Add your first rule to get started.</p>
       </li>
     </ul>
   </div>
-
 </div>
 
-<!-- Add/Edit Modal -->
+<!-- Modal -->
 <div class="modal-backdrop" id="modal">
   <div class="modal">
     <div class="modal-header">
@@ -242,34 +118,19 @@
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">Rule name</label>
-        <input type="text" id="f-desc" placeholder="e.g. Low stock warning">
+        <input type="text" id="f-desc" placeholder="e.g. Headwear">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Condition</label>
-          <select id="f-condition" onchange="updateValueHint()">
-            <option value="inventory_lt">Inventory less than</option>
-            <option value="inventory_eq">Inventory equals</option>
-            <option value="inventory_gt">Inventory greater than</option>
-            <option value="product_type_is">Product type is</option>
-            <option value="product_type_contains">Product type contains</option>
-            <option value="vendor_is">Vendor is</option>
-            <option value="created_within_days">Created within (days)</option>
-            <option value="older_than_days">Older than (days)</option>
-            <option value="status_is">Status is</option>
-            <option value="title_contains">Title contains</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Value</label>
-          <input type="text" id="f-value" placeholder="e.g. 10">
-          <span class="form-hint" id="value-hint"></span>
-        </div>
+
+      <div class="form-group">
+        <div class="section-label">Conditions</div>
+        <div class="conditions-list" id="conditions-list"></div>
+        <button class="btn-link" style="margin-top:10px; text-align:left;" onclick="addConditionRow()">+ Add condition</button>
       </div>
+
       <div class="form-group">
         <label class="form-label">Tags to apply</label>
-        <input type="text" id="f-tags" placeholder="e.g. Last Chance, Page:Sale">
-        <span class="form-hint">Separate multiple tags with commas. Tags are removed automatically when the condition no longer matches.</span>
+        <input type="text" id="f-tags" placeholder="e.g. Product:Hat, Page:Merch, Page:Accessories">
+        <span class="form-hint">Comma-separated. Tags are removed when no conditions match.</span>
       </div>
     </div>
     <div class="modal-footer">
@@ -283,31 +144,94 @@
 let rules = [];
 let editingId = null;
 
-const HINTS = {
-  inventory_lt: 'Number, e.g. 10',
-  inventory_eq: 'Number, e.g. 0',
-  inventory_gt: 'Number, e.g. 100',
-  product_type_is: 'Exact type, e.g. cap',
-  product_type_contains: 'Partial match, e.g. shirt',
-  vendor_is: 'Exact vendor name',
-  created_within_days: 'Days, e.g. 90',
-  older_than_days: 'Days, e.g. 180',
-  status_is: 'active, draft, or archived',
-  title_contains: 'Keyword, e.g. vintage',
-};
+const CONDITIONS = [
+  { value: 'product_type_is',       label: 'Product type is',        hint: 'e.g. cap' },
+  { value: 'product_type_contains', label: 'Product type contains',  hint: 'e.g. shirt' },
+  { value: 'inventory_lt',          label: 'Inventory less than',    hint: 'e.g. 10' },
+  { value: 'inventory_eq',          label: 'Inventory equals',       hint: 'e.g. 0' },
+  { value: 'inventory_gt',          label: 'Inventory greater than', hint: 'e.g. 100' },
+  { value: 'vendor_is',             label: 'Vendor is',              hint: 'e.g. Nike' },
+  { value: 'created_within_days',   label: 'Created within (days)',  hint: 'e.g. 90' },
+  { value: 'older_than_days',       label: 'Older than (days)',      hint: 'e.g. 180' },
+  { value: 'status_is',             label: 'Status is',              hint: 'active, draft, archived' },
+  { value: 'title_contains',        label: 'Title contains',         hint: 'e.g. vintage' },
+];
+const COND_LABEL = Object.fromEntries(CONDITIONS.map(c => [c.value, c.label]));
+const selectHTML = CONDITIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
 
-const CONDITION_LABELS = {
-  inventory_lt: 'Inventory <',
-  inventory_eq: 'Inventory =',
-  inventory_gt: 'Inventory >',
-  product_type_is: 'Product type is',
-  product_type_contains: 'Product type contains',
-  vendor_is: 'Vendor is',
-  created_within_days: 'Created within',
-  older_than_days: 'Older than',
-  status_is: 'Status is',
-  title_contains: 'Title contains',
-};
+function addConditionRow(condition = 'product_type_is', value = '', logic = 'OR') {
+  const list = document.getElementById('conditions-list');
+  const isFirst = list.children.length === 0;
+  const id = Date.now() + Math.random();
+  const hint = CONDITIONS.find(c => c.value === condition)?.hint || '';
+
+  const row = document.createElement('div');
+  row.className = 'condition-row';
+  row.dataset.id = id;
+
+  if (isFirst) {
+    // First row: spacer instead of toggle (no logic operator needed)
+    row.innerHTML = `
+      <div class="logic-spacer"></div>
+      <div class="condition-fields">
+        <select onchange="updateHint(this)">${selectHTML}</select>
+        <input type="text" placeholder="${hint}" value="${value}">
+      </div>
+      <button class="condition-remove" onclick="removeConditionRow(this)" title="Remove">×</button>
+    `;
+  } else {
+    row.innerHTML = `
+      <div class="logic-toggle">
+        <button class="logic-btn ${logic === 'OR' ? 'active-or' : ''}" onclick="setLogic(this,'OR')">OR</button>
+        <button class="logic-btn ${logic === 'AND' ? 'active-and' : ''}" onclick="setLogic(this,'AND')">AND</button>
+      </div>
+      <div class="condition-fields">
+        <select onchange="updateHint(this)">${selectHTML}</select>
+        <input type="text" placeholder="${hint}" value="${value}">
+      </div>
+      <button class="condition-remove" onclick="removeConditionRow(this)" title="Remove">×</button>
+    `;
+  }
+
+  row.querySelector('select').value = condition;
+  list.appendChild(row);
+}
+
+function setLogic(btn, logic) {
+  const toggle = btn.closest('.logic-toggle');
+  toggle.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active-or', 'active-and'));
+  btn.classList.add(logic === 'OR' ? 'active-or' : 'active-and');
+}
+
+function removeConditionRow(btn) {
+  const row = btn.closest('.condition-row');
+  const list = document.getElementById('conditions-list');
+  row.remove();
+  // If remaining first row still has a toggle, replace with spacer
+  const first = list.querySelector('.condition-row');
+  if (first && first.querySelector('.logic-toggle')) {
+    const spacer = document.createElement('div');
+    spacer.className = 'logic-spacer';
+    first.querySelector('.logic-toggle').replaceWith(spacer);
+  }
+}
+
+function updateHint(select) {
+  const hint = CONDITIONS.find(c => c.value === select.value)?.hint || '';
+  select.closest('.condition-fields').querySelector('input').placeholder = hint;
+}
+
+function getConditionRows() {
+  return [...document.getElementById('conditions-list').querySelectorAll('.condition-row')].map((row, i) => {
+    const toggle = row.querySelector('.logic-toggle');
+    const logic = i === 0 ? null : (toggle?.querySelector('.active-and') ? 'AND' : 'OR');
+    return {
+      logic,
+      condition: row.querySelector('select').value,
+      conditionValue: row.querySelector('input').value.trim(),
+    };
+  }).filter(c => c.conditionValue);
+}
 
 async function load() {
   const res = await fetch('/api/rules');
@@ -315,20 +239,26 @@ async function load() {
   render();
 }
 
+function describeConditions(rule) {
+  const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
+  return conds.map((c, i) => {
+    const prefix = i === 0 ? '' : `<span style="color:#008060;font-weight:600"> ${c.logic || 'OR'} </span>`;
+    return `${prefix}${COND_LABEL[c.condition] || c.condition} <strong>${c.conditionValue}</strong>`;
+  }).join('');
+}
+
 function render() {
   const list = document.getElementById('rule-list');
-  const empty = document.getElementById('empty-state');
   if (rules.length === 0) {
-    list.innerHTML = '';
-    list.appendChild(empty);
+    list.innerHTML = `<li class="empty-state"><div style="font-size:32px">🏷</div><p>No rules yet.</p></li>`;
     return;
   }
   list.innerHTML = rules.map(r => `
     <li class="rule-item">
-      <button class="rule-toggle ${r.enabled ? 'on' : ''}" onclick="toggleRule('${r.id}')" title="${r.enabled ? 'Disable' : 'Enable'}"></button>
+      <button class="rule-toggle ${r.enabled ? 'on' : ''}" onclick="toggleRule('${r.id}')"></button>
       <div class="rule-info">
         <div class="rule-desc">${r.description || 'Unnamed rule'}</div>
-        <div class="rule-detail">${CONDITION_LABELS[r.condition] || r.condition} <strong>${r.conditionValue}</strong></div>
+        <div class="rule-detail">${describeConditions(r)}</div>
       </div>
       <div class="rule-tags">
         ${r.tags.split(',').map(t => `<span class="tag-pill">${t.trim()}</span>`).join('')}
@@ -343,11 +273,7 @@ function render() {
 
 async function toggleRule(id) {
   const rule = rules.find(r => r.id === id);
-  await fetch(`/api/rules/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ enabled: !rule.enabled }),
-  });
+  await fetch(`/api/rules/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ enabled: !rule.enabled }) });
   rule.enabled = !rule.enabled;
   render();
 }
@@ -364,39 +290,29 @@ function editRule(id) {
   editingId = id;
   document.getElementById('modal-title').textContent = 'Edit rule';
   document.getElementById('f-desc').value = rule.description;
-  document.getElementById('f-condition').value = rule.condition;
-  document.getElementById('f-value').value = rule.conditionValue;
   document.getElementById('f-tags').value = rule.tags;
-  updateValueHint();
-  openModal();
+  document.getElementById('conditions-list').innerHTML = '';
+  const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
+  conds.forEach(c => addConditionRow(c.condition, c.conditionValue, c.logic || 'OR'));
+  document.getElementById('modal').classList.add('open');
 }
 
 async function saveRule() {
-  const payload = {
-    description: document.getElementById('f-desc').value.trim(),
-    condition: document.getElementById('f-condition').value,
-    conditionValue: document.getElementById('f-value').value.trim(),
-    tags: document.getElementById('f-tags').value.trim(),
-  };
-  if (!payload.description || !payload.conditionValue || !payload.tags) {
-    alert('Please fill in all fields.');
+  const conditions = getConditionRows();
+  if (!document.getElementById('f-desc').value.trim() || conditions.length === 0 || !document.getElementById('f-tags').value.trim()) {
+    alert('Please fill in all fields and add at least one condition.');
     return;
   }
+  const payload = {
+    description: document.getElementById('f-desc').value.trim(),
+    conditions,
+    tags: document.getElementById('f-tags').value.trim(),
+  };
   if (editingId) {
-    const res = await fetch(`/api/rules/${editingId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const updated = await res.json();
-    const idx = rules.findIndex(r => r.id === editingId);
-    rules[idx] = updated;
+    const res = await fetch(`/api/rules/${editingId}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    rules[rules.findIndex(r => r.id === editingId)] = await res.json();
   } else {
-    const res = await fetch('/api/rules', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch('/api/rules', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     rules.push(await res.json());
   }
   closeModal();
@@ -405,20 +321,14 @@ async function saveRule() {
 
 async function runNow() {
   const btn = document.getElementById('run-btn');
-  const dot = document.getElementById('status-dot');
-  const txt = document.getElementById('status-text');
-  btn.textContent = 'Running…';
-  btn.classList.add('running');
-  btn.disabled = true;
-  dot.classList.remove('idle');
-  txt.textContent = 'Tagging run in progress…';
+  btn.textContent = 'Running…'; btn.classList.add('running'); btn.disabled = true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent = 'Tagging run in progress…';
   await fetch('/api/run-now', { method: 'POST' });
   setTimeout(() => {
-    btn.textContent = 'Run now';
-    btn.classList.remove('running');
-    btn.disabled = false;
-    dot.classList.add('idle');
-    txt.textContent = 'Run triggered — check Railway logs for results';
+    btn.textContent = 'Run now'; btn.classList.remove('running'); btn.disabled = false;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent = 'Run triggered — check Railway logs for results';
   }, 2000);
 }
 
@@ -426,10 +336,9 @@ function openModal() {
   if (!editingId) {
     document.getElementById('modal-title').textContent = 'Add rule';
     document.getElementById('f-desc').value = '';
-    document.getElementById('f-condition').value = 'inventory_lt';
-    document.getElementById('f-value').value = '';
     document.getElementById('f-tags').value = '';
-    updateValueHint();
+    document.getElementById('conditions-list').innerHTML = '';
+    addConditionRow();
   }
   document.getElementById('modal').classList.add('open');
 }
@@ -437,11 +346,6 @@ function openModal() {
 function closeModal() {
   editingId = null;
   document.getElementById('modal').classList.remove('open');
-}
-
-function updateValueHint() {
-  const cond = document.getElementById('f-condition').value;
-  document.getElementById('value-hint').textContent = HINTS[cond] || '';
 }
 
 load();
