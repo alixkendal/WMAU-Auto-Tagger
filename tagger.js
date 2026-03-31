@@ -1,8 +1,3 @@
-/**
- * Core tagging engine.
- * Reads rules from rules.json (managed via the UI) and applies them to all products.
- */
-
 import { THROTTLE_MS } from './config.js';
 import { fetchAllProducts, updateProductTags } from './shopify.js';
 import { log } from './logger.js';
@@ -36,30 +31,24 @@ export async function runAllRules() {
       stats.errors++;
       log('error', `Product ${product.id} ("${product.title}"): ${err.message}`);
     }
-
-    if (stats.checked % 10 === 0) {
-      log('info', `  … processed ${stats.checked}/${products.length}`);
-    }
+    if (stats.checked % 10 === 0) log('info', `  … processed ${stats.checked}/${products.length}`);
     await sleep(THROTTLE_MS);
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  log('info', `✔  Run complete in ${elapsed}s — ${stats.updated} updated, ${stats.unchanged} unchanged, ${stats.errors} errors`);
+  log('info', `✔  Done in ${elapsed}s — ${stats.updated} updated, ${stats.unchanged} unchanged, ${stats.errors} errors`);
 }
 
 async function applyRulesToProduct(product, rules) {
-  const currentTags = parseTags(product.tags);
-  const desiredTags = new Set(currentTags);
+  const desiredTags = new Set(parseTags(product.tags));
   const changes = [];
 
   for (const rule of rules) {
-    const ruleTags = parseTags(rule.tags);
-    const matches = evaluateCondition(rule, product);
-
-    for (const tag of ruleTags) {
+    const matches = ruleMatches(rule, product);
+    for (const tag of parseTags(rule.tags)) {
       const has = desiredTags.has(tag);
-      if (matches && !has) { desiredTags.add(tag); changes.push(`+${tag}`); }
-      if (!matches && has) { desiredTags.delete(tag); changes.push(`-${tag}`); }
+      if (matches && !has)  { desiredTags.add(tag);    changes.push(`+${tag}`); }
+      if (!matches && has)  { desiredTags.delete(tag); changes.push(`-${tag}`); }
     }
   }
 
@@ -69,13 +58,35 @@ async function applyRulesToProduct(product, rules) {
   return true;
 }
 
-function evaluateCondition(rule, product) {
-  const val = rule.conditionValue;
-  const inventory = getTotalInventory(product);
-  switch (rule.condition) {
-    case 'inventory_lt':          return inventory < parseInt(val);
-    case 'inventory_eq':          return inventory === parseInt(val);
-    case 'inventory_gt':          return inventory > parseInt(val);
+/**
+ * Evaluate a rule's conditions against a product.
+ * Conditions are evaluated left-to-right with AND/OR operators.
+ * First condition has no operator (logic: null) — treated as the initial value.
+ */
+function ruleMatches(rule, product) {
+  // Support legacy single-condition rules
+  const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
+  if (conds.length === 0) return false;
+
+  let result = evaluateCondition(conds[0], product);
+
+  for (let i = 1; i < conds.length; i++) {
+    const c = conds[i];
+    const val = evaluateCondition(c, product);
+    if (c.logic === 'AND') result = result && val;
+    else                   result = result || val;  // default OR
+  }
+
+  return result;
+}
+
+function evaluateCondition(c, product) {
+  const val = c.conditionValue;
+  const inv = getTotalInventory(product);
+  switch (c.condition) {
+    case 'inventory_lt':          return inv < parseInt(val);
+    case 'inventory_eq':          return inv === parseInt(val);
+    case 'inventory_gt':          return inv > parseInt(val);
     case 'product_type_is':       return product.product_type?.toLowerCase() === val.toLowerCase();
     case 'product_type_contains': return product.product_type?.toLowerCase().includes(val.toLowerCase());
     case 'vendor_is':             return product.vendor?.toLowerCase() === val.toLowerCase();
@@ -87,14 +98,7 @@ function evaluateCondition(rule, product) {
   }
 }
 
-function getTotalInventory(p) {
-  return (p.variants || []).reduce((s, v) => s + (v.inventory_quantity ?? 0), 0);
-}
-function daysSince(d) {
-  return (Date.now() - new Date(d).getTime()) / (1000 * 60 * 60 * 24);
-}
-function parseTags(str) {
-  if (!str) return [];
-  return str.split(',').map(t => t.trim()).filter(Boolean);
-}
+function getTotalInventory(p) { return (p.variants||[]).reduce((s,v) => s+(v.inventory_quantity??0), 0); }
+function daysSince(d) { return (Date.now() - new Date(d).getTime()) / 86400000; }
+function parseTags(str) { return str ? str.split(',').map(t=>t.trim()).filter(Boolean) : []; }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
