@@ -1,16 +1,13 @@
 /**
  * Core tagging engine.
- * Evaluates all RULES against all products and applies the minimal
- * set of tag additions / removals needed.
+ * Reads rules from rules.json (managed via the UI) and applies them to all products.
  */
 
-import { RULES, THROTTLE_MS } from './config.js';
+import { THROTTLE_MS } from './config.js';
 import { fetchAllProducts, updateProductTags } from './shopify.js';
 import { log } from './logger.js';
+import { loadRules } from './server.js';
 
-// ---------------------------------------------------------------------------
-// Main entry point — called by the scheduler
-// ---------------------------------------------------------------------------
 export async function runAllRules() {
   const startTime = Date.now();
   log('info', '▶  Starting tagging run…');
@@ -24,12 +21,15 @@ export async function runAllRules() {
     return;
   }
 
+  const rules = loadRules().filter(r => r.enabled);
+  log('info', `📋 Applying ${rules.length} active rules`);
+
   const stats = { checked: 0, updated: 0, unchanged: 0, errors: 0 };
 
   for (const product of products) {
     stats.checked++;
     try {
-      const changed = await applyRulesToProduct(product);
+      const changed = await applyRulesToProduct(product, rules);
       if (changed) stats.updated++;
       else stats.unchanged++;
     } catch (err) {
@@ -37,7 +37,6 @@ export async function runAllRules() {
       log('error', `Product ${product.id} ("${product.title}"): ${err.message}`);
     }
 
-    // Throttle between updates to stay within Shopify's rate limits
     if (stats.checked % 10 === 0) {
       log('info', `  … processed ${stats.checked}/${products.length}`);
     }
@@ -48,47 +47,54 @@ export async function runAllRules() {
   log('info', `✔  Run complete in ${elapsed}s — ${stats.updated} updated, ${stats.unchanged} unchanged, ${stats.errors} errors`);
 }
 
-// ---------------------------------------------------------------------------
-// Evaluate all rules for a single product and update if needed
-// ---------------------------------------------------------------------------
-async function applyRulesToProduct(product) {
-  // Parse existing tags into a Set for fast lookups
+async function applyRulesToProduct(product, rules) {
   const currentTags = parseTags(product.tags);
   const desiredTags = new Set(currentTags);
-
   const changes = [];
 
-  for (const rule of RULES) {
-    for (const tag of rule.tags) {
+  for (const rule of rules) {
+    const ruleTags = parseTags(rule.tags);
+    const matches = evaluateCondition(rule, product);
+
+    for (const tag of ruleTags) {
       const has = desiredTags.has(tag);
-
-      if (!has && rule.shouldAdd(product)) {
-        desiredTags.add(tag);
-        changes.push(`+${tag} (rule: ${rule.id})`);
-      }
-
-      if (has && rule.shouldRemove && rule.shouldRemove(product)) {
-        desiredTags.delete(tag);
-        changes.push(`-${tag} (rule: ${rule.id})`);
-      }
+      if (matches && !has) { desiredTags.add(tag); changes.push(`+${tag}`); }
+      if (!matches && has) { desiredTags.delete(tag); changes.push(`-${tag}`); }
     }
   }
 
-  if (changes.length === 0) return false; // nothing to do
-
-  log('info', `  🏷  "${product.title}" [${product.id}]: ${changes.join(' | ')}`);
+  if (changes.length === 0) return false;
+  log('info', `  🏷  "${product.title}": ${changes.join(' | ')}`);
   await updateProductTags(product.id, [...desiredTags]);
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-function parseTags(tagsString) {
-  if (!tagsString) return [];
-  return tagsString.split(',').map(t => t.trim()).filter(Boolean);
+function evaluateCondition(rule, product) {
+  const val = rule.conditionValue;
+  const inventory = getTotalInventory(product);
+  switch (rule.condition) {
+    case 'inventory_lt':          return inventory < parseInt(val);
+    case 'inventory_eq':          return inventory === parseInt(val);
+    case 'inventory_gt':          return inventory > parseInt(val);
+    case 'product_type_is':       return product.product_type?.toLowerCase() === val.toLowerCase();
+    case 'product_type_contains': return product.product_type?.toLowerCase().includes(val.toLowerCase());
+    case 'vendor_is':             return product.vendor?.toLowerCase() === val.toLowerCase();
+    case 'created_within_days':   return daysSince(product.created_at) <= parseInt(val);
+    case 'older_than_days':       return daysSince(product.created_at) > parseInt(val);
+    case 'status_is':             return product.status === val;
+    case 'title_contains':        return product.title?.toLowerCase().includes(val.toLowerCase());
+    default: return false;
+  }
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function getTotalInventory(p) {
+  return (p.variants || []).reduce((s, v) => s + (v.inventory_quantity ?? 0), 0);
 }
+function daysSince(d) {
+  return (Date.now() - new Date(d).getTime()) / (1000 * 60 * 60 * 24);
+}
+function parseTags(str) {
+  if (!str) return [];
+  return str.split(',').map(t => t.trim()).filter(Boolean);
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

@@ -5,10 +5,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "run-once": "node -e \"import('./tagger.js').then(m => m.runAllRules())\""
+    "start": "node index.js"
   },
   "dependencies": {
+    "express": "^4.18.2",
     "node-cron": "^3.0.3"
   },
   "engines": {
