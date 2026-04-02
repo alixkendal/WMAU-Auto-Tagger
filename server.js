@@ -35,9 +35,7 @@ async function saveRules(rules) {
   await RULES_DOC.set({ list: rules });
 }
 
-app.get('/api/rules', async (req, res) => {
-  res.json(await loadRules());
-});
+app.get('/api/rules', async (req, res) => { res.json(await loadRules()); });
 
 app.post('/api/rules', async (req, res) => {
   const rules = await loadRules();
@@ -73,13 +71,13 @@ app.listen(PORT, () => log('info', `🌐 Rules UI at http://localhost:${PORT}`))
 function getDefaultRules() {
   return [
     {
-      id: '1', enabled: true,
+      id: '1', enabled: true, autoRemove: true,
       description: 'New arrivals',
       conditions: [{ condition: 'created_within_days', conditionValue: '90', logic: null }],
       tags: 'New Arrival',
     },
     {
-      id: '2', enabled: true,
+      id: '2', enabled: true, autoRemove: false,
       description: 'Hats',
       conditions: [
         { condition: 'product_type_is', conditionValue: 'hat',    logic: null },
@@ -88,7 +86,7 @@ function getDefaultRules() {
       tags: 'Product:Hat, Product:Merch, Product:Accessories',
     },
     {
-      id: '3', enabled: true,
+      id: '3', enabled: true, autoRemove: false,
       description: 'Jewellery',
       conditions: [
         { condition: 'product_type_is', conditionValue: 'Bracelet',  logic: null },
@@ -101,7 +99,7 @@ function getDefaultRules() {
       tags: 'Product:Jewellery, Product:Merch, Product:Accessories',
     },
     {
-      id: '4', enabled: true,
+      id: '4', enabled: true, autoRemove: false,
       description: 'Bags',
       conditions: [
         { condition: 'product_type_is', conditionValue: 'Bum Bag', logic: null },
@@ -111,7 +109,7 @@ function getDefaultRules() {
       tags: 'Product:Bag, Product:Merch, Product:Accessories',
     },
     {
-      id: '5', enabled: true,
+      id: '5', enabled: true, autoRemove: false,
       description: 'Vinyl',
       conditions: [
         { condition: 'product_type_contains', conditionValue: 'Vinyl', logic: null },
@@ -120,13 +118,13 @@ function getDefaultRules() {
       tags: 'Product:Vinyl, Product:Music',
     },
     {
-      id: '6', enabled: false,
+      id: '6', enabled: false, autoRemove: true,
       description: 'Low stock',
       conditions: [{ condition: 'inventory_lt', conditionValue: '10', logic: null }],
       tags: 'Last Chance',
     },
     {
-      id: '7', enabled: false,
+      id: '7', enabled: false, autoRemove: true,
       description: 'Out of stock',
       conditions: [{ condition: 'inventory_eq', conditionValue: '0', logic: null }],
       tags: 'Out of Stock',

@@ -16,7 +16,7 @@ export async function runAllRules() {
     return;
   }
 
- const rules = (await loadRules()).filter(r => r.enabled);
+  const rules = (await loadRules()).filter(r => r.enabled);
   log('info', `📋 Applying ${rules.length} active rules`);
 
   const stats = { checked: 0, updated: 0, unchanged: 0, errors: 0 };
@@ -40,43 +40,51 @@ export async function runAllRules() {
 }
 
 async function applyRulesToProduct(product, rules) {
-  const desiredTags = new Set(parseTags(product.tags));
-  const changes = [];
+  const currentTags = parseTags(product.tags);
+  const toAdd = new Set();
+  const toRemove = new Set();
 
   for (const rule of rules) {
     const matches = ruleMatches(rule, product);
+    const autoRemove = rule.autoRemove !== false; // default true for backwards compat
+
     for (const tag of parseTags(rule.tags)) {
-      const has = desiredTags.has(tag);
-      if (matches && !has)  { desiredTags.add(tag);    changes.push(`+${tag}`); }
-      if (!matches && has)  { desiredTags.delete(tag); changes.push(`-${tag}`); }
+      if (matches) {
+        toAdd.add(tag);
+      } else if (autoRemove) {
+        // Only queue removal if no other matching rule is adding this tag
+        toRemove.add(tag);
+      }
     }
+  }
+
+  // Never remove a tag that another rule is actively adding
+  const safeToRemove = new Set([...toRemove].filter(tag => !toAdd.has(tag)));
+
+  const finalTags = new Set(currentTags);
+  const changes = [];
+
+  for (const tag of toAdd) {
+    if (!finalTags.has(tag)) { finalTags.add(tag); changes.push(`+${tag}`); }
+  }
+  for (const tag of safeToRemove) {
+    if (finalTags.has(tag)) { finalTags.delete(tag); changes.push(`-${tag}`); }
   }
 
   if (changes.length === 0) return false;
   log('info', `  🏷  "${product.title}": ${changes.join(' | ')}`);
-  await updateProductTags(product.id, [...desiredTags]);
+  await updateProductTags(product.id, [...finalTags]);
   return true;
 }
 
-/**
- * Evaluate a rule's conditions against a product.
- * Conditions are evaluated left-to-right with AND/OR operators.
- * First condition has no operator (logic: null) — treated as the initial value.
- */
 function ruleMatches(rule, product) {
-  // Support legacy single-condition rules
   const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
   if (conds.length === 0) return false;
-
   let result = evaluateCondition(conds[0], product);
-
   for (let i = 1; i < conds.length; i++) {
-    const c = conds[i];
-    const val = evaluateCondition(c, product);
-    if (c.logic === 'AND') result = result && val;
-    else                   result = result || val;  // default OR
+    const val = evaluateCondition(conds[i], product);
+    result = conds[i].logic === 'AND' ? result && val : result || val;
   }
-
   return result;
 }
 
