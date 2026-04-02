@@ -23,7 +23,7 @@
   .rule-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
   .rule-toggle.on::after { transform: translateX(16px); }
   .rule-info { flex: 1; min-width: 0; }
-  .rule-desc { font-weight: 500; font-size: 14px; }
+  .rule-desc { font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; }
   .rule-detail { font-size: 12px; color: #6d7175; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rule-tags { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
   .tag-pill { background: #f1f1f1; color: #1a1a1a; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -44,6 +44,12 @@
   .empty-state { padding: 48px 20px; text-align: center; color: #6d7175; }
   .empty-state p { font-size: 14px; margin-top: 8px; }
 
+  /* Badge */
+  .badge { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .badge-dynamic { background: #e3f1fd; color: #0d5c8a; }
+  .badge-permanent { background: #f1f1f1; color: #6d7175; }
+
+  /* Modal */
   .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
   .modal-backdrop.open { display: flex; }
   .modal { background: #fff; border-radius: 8px; width: 100%; max-width: 580px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column; }
@@ -58,17 +64,24 @@
   input[type="text"], select { width: 100%; padding: 8px 12px; border: 1px solid #c9cccf; border-radius: 6px; font-size: 14px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.15s; font-family: inherit; }
   input:focus, select:focus { border-color: #008060; box-shadow: 0 0 0 2px rgba(0,128,96,0.15); }
 
+  /* Auto-remove toggle row */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #f6f6f7; border-radius: 6px; padding: 12px 14px; }
+  .toggle-row-text { display: flex; flex-direction: column; gap: 2px; }
+  .toggle-row-label { font-size: 13px; font-weight: 500; }
+  .toggle-row-hint { font-size: 12px; color: #6d7175; }
+  .mini-toggle { flex-shrink: 0; width: 36px; height: 20px; background: #e1e3e5; border-radius: 10px; position: relative; cursor: pointer; border: none; transition: background 0.2s; }
+  .mini-toggle.on { background: #008060; }
+  .mini-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .mini-toggle.on::after { transform: translateX(16px); }
+
   .conditions-list { display: flex; flex-direction: column; gap: 6px; }
   .condition-row { display: flex; align-items: center; gap: 8px; }
-
-  /* AND/OR toggle pill */
   .logic-toggle { flex-shrink: 0; display: flex; border: 1px solid #c9cccf; border-radius: 6px; overflow: hidden; }
   .logic-btn { background: #fff; border: none; padding: 0 10px; height: 36px; font-size: 12px; font-weight: 600; cursor: pointer; color: #6d7175; transition: all 0.15s; }
   .logic-btn.active-or  { background: #e3f1fd; color: #0d5c8a; }
   .logic-btn.active-and { background: #e6f4ee; color: #006e52; }
   .logic-btn:not(.active-or):not(.active-and):hover { background: #f6f6f7; }
-  .logic-spacer { flex-shrink: 0; width: 57px; } /* same width as .logic-toggle so rows align */
-
+  .logic-spacer { flex-shrink: 0; width: 57px; }
   .condition-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
   .condition-remove { background: none; border: none; color: #8c9196; cursor: pointer; font-size: 20px; line-height: 1; flex-shrink: 0; padding: 0 2px; }
   .condition-remove:hover { color: #d82c0d; }
@@ -122,15 +135,24 @@
       </div>
 
       <div class="form-group">
-        <div class="section-label">Conditions</div>
+        <div class="section-label">Conditions — match any of these</div>
         <div class="conditions-list" id="conditions-list"></div>
         <button class="btn-link" style="margin-top:10px; text-align:left;" onclick="addConditionRow()">+ Add condition</button>
       </div>
 
       <div class="form-group">
         <label class="form-label">Tags to apply</label>
-        <input type="text" id="f-tags" placeholder="e.g. Product:Hat, Page:Merch, Page:Accessories">
-        <span class="form-hint">Comma-separated. Tags are removed when no conditions match.</span>
+        <input type="text" id="f-tags" placeholder="e.g. Product:Hat, Page:Merch">
+        <span class="form-hint">Comma-separated.</span>
+      </div>
+
+      <!-- Auto-remove toggle -->
+      <div class="toggle-row">
+        <div class="toggle-row-text">
+          <span class="toggle-row-label">Remove tags when condition no longer matches</span>
+          <span class="toggle-row-hint">Turn off for permanent classifications like product type</span>
+        </div>
+        <button class="mini-toggle" id="auto-remove-toggle" onclick="toggleAutoRemove()"></button>
       </div>
     </div>
     <div class="modal-footer">
@@ -143,6 +165,7 @@
 <script>
 let rules = [];
 let editingId = null;
+let autoRemoveState = true;
 
 const CONDITIONS = [
   { value: 'product_type_is',       label: 'Product type is',        hint: 'e.g. cap' },
@@ -159,6 +182,25 @@ const CONDITIONS = [
 const COND_LABEL = Object.fromEntries(CONDITIONS.map(c => [c.value, c.label]));
 const selectHTML = CONDITIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
 
+// Auto-remove is ON by default for new rules — user can toggle off for product-type rules
+const DYNAMIC_CONDITIONS = ['inventory_lt','inventory_eq','inventory_gt','created_within_days','older_than_days','status_is'];
+
+function inferAutoRemove() {
+  const rows = [...document.getElementById('conditions-list').querySelectorAll('.condition-row')];
+  const hasDynamic = rows.some(r => DYNAMIC_CONDITIONS.includes(r.querySelector('select').value));
+  return hasDynamic;
+}
+
+function setAutoRemove(val) {
+  autoRemoveState = val;
+  const btn = document.getElementById('auto-remove-toggle');
+  btn.classList.toggle('on', val);
+}
+
+function toggleAutoRemove() {
+  setAutoRemove(!autoRemoveState);
+}
+
 function addConditionRow(condition = 'product_type_is', value = '', logic = 'OR') {
   const list = document.getElementById('conditions-list');
   const isFirst = list.children.length === 0;
@@ -170,26 +212,25 @@ function addConditionRow(condition = 'product_type_is', value = '', logic = 'OR'
   row.dataset.id = id;
 
   if (isFirst) {
-    // First row: spacer instead of toggle (no logic operator needed)
     row.innerHTML = `
       <div class="logic-spacer"></div>
       <div class="condition-fields">
-        <select onchange="updateHint(this)">${selectHTML}</select>
+        <select onchange="updateHint(this); maybeUpdateAutoRemove()">${selectHTML}</select>
         <input type="text" placeholder="${hint}" value="${value}">
       </div>
-      <button class="condition-remove" onclick="removeConditionRow(this)" title="Remove">×</button>
+      <button class="condition-remove" onclick="removeConditionRow(this)">×</button>
     `;
   } else {
     row.innerHTML = `
       <div class="logic-toggle">
-        <button class="logic-btn ${logic === 'OR' ? 'active-or' : ''}" onclick="setLogic(this,'OR')">OR</button>
-        <button class="logic-btn ${logic === 'AND' ? 'active-and' : ''}" onclick="setLogic(this,'AND')">AND</button>
+        <button class="logic-btn ${logic==='OR'?'active-or':''}" onclick="setLogic(this,'OR')">OR</button>
+        <button class="logic-btn ${logic==='AND'?'active-and':''}" onclick="setLogic(this,'AND')">AND</button>
       </div>
       <div class="condition-fields">
-        <select onchange="updateHint(this)">${selectHTML}</select>
+        <select onchange="updateHint(this); maybeUpdateAutoRemove()">${selectHTML}</select>
         <input type="text" placeholder="${hint}" value="${value}">
       </div>
-      <button class="condition-remove" onclick="removeConditionRow(this)" title="Remove">×</button>
+      <button class="condition-remove" onclick="removeConditionRow(this)">×</button>
     `;
   }
 
@@ -197,19 +238,21 @@ function addConditionRow(condition = 'product_type_is', value = '', logic = 'OR'
   list.appendChild(row);
 }
 
+function maybeUpdateAutoRemove() {
+  // Only auto-suggest; don't override a user's manual choice
+}
+
 function setLogic(btn, logic) {
   const toggle = btn.closest('.logic-toggle');
-  toggle.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active-or', 'active-and'));
-  btn.classList.add(logic === 'OR' ? 'active-or' : 'active-and');
+  toggle.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active-or','active-and'));
+  btn.classList.add(logic==='OR'?'active-or':'active-and');
 }
 
 function removeConditionRow(btn) {
   const row = btn.closest('.condition-row');
-  const list = document.getElementById('conditions-list');
   row.remove();
-  // If remaining first row still has a toggle, replace with spacer
-  const first = list.querySelector('.condition-row');
-  if (first && first.querySelector('.logic-toggle')) {
+  const first = document.getElementById('conditions-list').querySelector('.condition-row');
+  if (first?.querySelector('.logic-toggle')) {
     const spacer = document.createElement('div');
     spacer.className = 'logic-spacer';
     first.querySelector('.logic-toggle').replaceWith(spacer);
@@ -225,11 +268,7 @@ function getConditionRows() {
   return [...document.getElementById('conditions-list').querySelectorAll('.condition-row')].map((row, i) => {
     const toggle = row.querySelector('.logic-toggle');
     const logic = i === 0 ? null : (toggle?.querySelector('.active-and') ? 'AND' : 'OR');
-    return {
-      logic,
-      condition: row.querySelector('select').value,
-      conditionValue: row.querySelector('input').value.trim(),
-    };
+    return { logic, condition: row.querySelector('select').value, conditionValue: row.querySelector('input').value.trim() };
   }).filter(c => c.conditionValue);
 }
 
@@ -242,8 +281,8 @@ async function load() {
 function describeConditions(rule) {
   const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
   return conds.map((c, i) => {
-    const prefix = i === 0 ? '' : `<span style="color:#008060;font-weight:600"> ${c.logic || 'OR'} </span>`;
-    return `${prefix}${COND_LABEL[c.condition] || c.condition} <strong>${c.conditionValue}</strong>`;
+    const prefix = i === 0 ? '' : `<span style="color:#008060;font-weight:600"> ${c.logic||'OR'} </span>`;
+    return `${prefix}${COND_LABEL[c.condition]||c.condition} <strong>${c.conditionValue}</strong>`;
   }).join('');
 }
 
@@ -253,34 +292,39 @@ function render() {
     list.innerHTML = `<li class="empty-state"><div style="font-size:32px">🏷</div><p>No rules yet.</p></li>`;
     return;
   }
-  list.innerHTML = rules.map(r => `
+  list.innerHTML = rules.map(r => {
+    const autoRemove = r.autoRemove !== false;
+    const badge = autoRemove
+      ? `<span class="badge badge-dynamic">dynamic</span>`
+      : `<span class="badge badge-permanent">permanent</span>`;
+    return `
     <li class="rule-item">
-      <button class="rule-toggle ${r.enabled ? 'on' : ''}" onclick="toggleRule('${r.id}')"></button>
+      <button class="rule-toggle ${r.enabled?'on':''}" onclick="toggleRule('${r.id}')"></button>
       <div class="rule-info">
-        <div class="rule-desc">${r.description || 'Unnamed rule'}</div>
+        <div class="rule-desc">${r.description||'Unnamed rule'} ${badge}</div>
         <div class="rule-detail">${describeConditions(r)}</div>
       </div>
       <div class="rule-tags">
-        ${r.tags.split(',').map(t => `<span class="tag-pill">${t.trim()}</span>`).join('')}
+        ${r.tags.split(',').map(t=>`<span class="tag-pill">${t.trim()}</span>`).join('')}
       </div>
       <div class="rule-actions">
         <button class="btn-icon" onclick="editRule('${r.id}')" title="Edit">✎</button>
         <button class="btn-icon danger" onclick="deleteRule('${r.id}')" title="Delete">✕</button>
       </div>
-    </li>
-  `).join('');
+    </li>`;
+  }).join('');
 }
 
 async function toggleRule(id) {
   const rule = rules.find(r => r.id === id);
-  await fetch(`/api/rules/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ enabled: !rule.enabled }) });
+  await fetch(`/api/rules/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({enabled:!rule.enabled}) });
   rule.enabled = !rule.enabled;
   render();
 }
 
 async function deleteRule(id) {
   if (!confirm('Delete this rule?')) return;
-  await fetch(`/api/rules/${id}`, { method: 'DELETE' });
+  await fetch(`/api/rules/${id}`, { method:'DELETE' });
   rules = rules.filter(r => r.id !== id);
   render();
 }
@@ -293,7 +337,8 @@ function editRule(id) {
   document.getElementById('f-tags').value = rule.tags;
   document.getElementById('conditions-list').innerHTML = '';
   const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
-  conds.forEach(c => addConditionRow(c.condition, c.conditionValue, c.logic || 'OR'));
+  conds.forEach(c => addConditionRow(c.condition, c.conditionValue, c.logic||'OR'));
+  setAutoRemove(rule.autoRemove !== false);
   document.getElementById('modal').classList.add('open');
 }
 
@@ -307,12 +352,13 @@ async function saveRule() {
     description: document.getElementById('f-desc').value.trim(),
     conditions,
     tags: document.getElementById('f-tags').value.trim(),
+    autoRemove: autoRemoveState,
   };
   if (editingId) {
-    const res = await fetch(`/api/rules/${editingId}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    rules[rules.findIndex(r => r.id === editingId)] = await res.json();
+    const res = await fetch(`/api/rules/${editingId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    rules[rules.findIndex(r=>r.id===editingId)] = await res.json();
   } else {
-    const res = await fetch('/api/rules', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const res = await fetch('/api/rules', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
     rules.push(await res.json());
   }
   closeModal();
@@ -324,7 +370,7 @@ async function runNow() {
   btn.textContent = 'Running…'; btn.classList.add('running'); btn.disabled = true;
   document.getElementById('status-dot').classList.remove('idle');
   document.getElementById('status-text').textContent = 'Tagging run in progress…';
-  await fetch('/api/run-now', { method: 'POST' });
+  await fetch('/api/run-now', { method:'POST' });
   setTimeout(() => {
     btn.textContent = 'Run now'; btn.classList.remove('running'); btn.disabled = false;
     document.getElementById('status-dot').classList.add('idle');
@@ -339,6 +385,7 @@ function openModal() {
     document.getElementById('f-tags').value = '';
     document.getElementById('conditions-list').innerHTML = '';
     addConditionRow();
+    setAutoRemove(false); // default to permanent for new rules
   }
   document.getElementById('modal').classList.add('open');
 }
