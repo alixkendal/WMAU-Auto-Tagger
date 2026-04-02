@@ -16,7 +16,7 @@ export async function runAllRules() {
     return;
   }
 
- const rules = loadRules().filter(r => r.enabled);
+ const rules = (await loadRules()).filter(r => r.enabled);
   log('info', `📋 Applying ${rules.length} active rules`);
 
   const stats = { checked: 0, updated: 0, unchanged: 0, errors: 0 };
