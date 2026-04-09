@@ -45,20 +45,19 @@ async function applyRulesToProduct(product, rules) {
   const toRemove = new Set();
 
   for (const rule of rules) {
-    const matches = ruleMatches(rule, product);
-    const autoRemove = rule.autoRemove !== false; // default true for backwards compat
-
-    for (const tag of parseTags(rule.tags)) {
-      if (matches) {
-        toAdd.add(tag);
-      } else if (autoRemove) {
-        // Only queue removal if no other matching rule is adding this tag
-        toRemove.add(tag);
+    if (rule.type === 'release_date') {
+      applyReleaseDateRule(rule, product, toAdd, toRemove);
+    } else {
+      const matches = ruleMatches(rule, product);
+      const autoRemove = rule.autoRemove !== false;
+      for (const tag of parseTags(rule.tags)) {
+        if (matches) toAdd.add(tag);
+        else if (autoRemove) toRemove.add(tag);
       }
     }
   }
 
-  // Never remove a tag that another rule is actively adding
+  // Never remove a tag another rule is actively adding
   const safeToRemove = new Set([...toRemove].filter(tag => !toAdd.has(tag)));
 
   const finalTags = new Set(currentTags);
@@ -73,10 +72,43 @@ async function applyRulesToProduct(product, rules) {
 
   if (changes.length === 0) return false;
   log('info', `  🏷  "${product.title}": ${changes.join(' | ')}`);
-  await updateProductTags(product.id, [...finalTags]);
+  await updateProductTags(product.gid || product.id, [...finalTags]);
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// Release date rule logic
+// ---------------------------------------------------------------------------
+function applyReleaseDateRule(rule, product, toAdd, toRemove) {
+  const metafieldKey = rule.metafieldKey; // e.g. "pre_order_date"
+  const dateStr = product.metafields?.[metafieldKey];
+
+  // No metafield set — ignore this product for this rule
+  if (!dateStr) return;
+
+  const releaseDate = new Date(dateStr);
+  const now = new Date();
+  const windowDays = parseInt(rule.windowDays) || 30;
+  const daysSinceRelease = (now - releaseDate) / 86400000;
+
+  if (daysSinceRelease < 0) {
+    // Before release date → "before" tag
+    toAdd.add(rule.beforeTag);
+    toRemove.add(rule.afterTag);
+  } else if (daysSinceRelease <= windowDays) {
+    // Within window after release → "after" tag
+    toRemove.add(rule.beforeTag);
+    toAdd.add(rule.afterTag);
+  } else {
+    // Beyond window → remove both
+    toRemove.add(rule.beforeTag);
+    toRemove.add(rule.afterTag);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Standard rule evaluation
+// ---------------------------------------------------------------------------
 function ruleMatches(rule, product) {
   const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
   if (conds.length === 0) return false;
