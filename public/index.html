@@ -125,6 +125,16 @@
 
   <div class="card">
     <div class="card-header">
+      <span class="card-title">One-time cleanup</span>
+      <button class="btn btn-run" id="prefix-run-btn" onclick="runPrefixCleanup()">Run cleanup</button>
+    </div>
+    <div style="padding:14px 20px;font-size:13px;color:#6d7175;">
+      Strips <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Product:</code> prefix from all product tags store-wide — e.g. <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Product:Hat</code> → <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Hat</code>. Run once, then this card can be ignored.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
       <span class="card-title">Artist genre sync</span>
       <button class="btn btn-run" id="genre-run-btn" onclick="runGenreNow()">Sync genres now</button>
     </div>
@@ -497,6 +507,20 @@ async function saveRule() {
     rules.push(await res.json());
   }
   closeModal(); render();
+}
+
+async function runPrefixCleanup() {
+  if (!confirm('This will strip "Product:" from all product tags store-wide. Continue?')) return;
+  const btn = document.getElementById('prefix-run-btn');
+  btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Product: prefix cleanup in progress…';
+  await fetch('/api/backfill-product-prefix',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Done ✓'; btn.disabled=true;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Cleanup triggered — check Railway logs for results';
+  },2000);
 }
 
 async function runGenreNow() {
