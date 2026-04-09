@@ -125,6 +125,16 @@
 
   <div class="card">
     <div class="card-header">
+      <span class="card-title">Artist genre sync</span>
+      <button class="btn btn-run" id="genre-run-btn" onclick="runGenreNow()">Sync genres now</button>
+    </div>
+    <div style="padding:14px 20px;font-size:13px;color:#6d7175;">
+      Reads <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">custom.genre</code> from all artist collections and adds <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Genre:X</code> tags to their products. Runs automatically at 30 minutes past each hour. Also normalises any <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Genre: Rock</code> spacing issues. Never removes genre tags.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
       <span class="card-title">Tagging rules</span>
       <button class="btn btn-primary" onclick="openModal()">+ Add rule</button>
     </div>
@@ -455,6 +465,19 @@ async function saveRule() {
     rules.push(await res.json());
   }
   closeModal(); render();
+}
+
+async function runGenreNow() {
+  const btn = document.getElementById('genre-run-btn');
+  btn.textContent='Syncing…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Genre sync in progress…';
+  await fetch('/api/run-genres',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Sync genres now'; btn.classList.remove('running'); btn.disabled=false;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Genre sync triggered — check Railway logs for results';
+  },2000);
 }
 
 async function runNow() {
