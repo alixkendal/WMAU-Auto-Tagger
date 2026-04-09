@@ -65,6 +65,12 @@ app.post('/api/run-now', async (req, res) => {
   runAllRules().catch(err => log('error', err.message));
 });
 
+app.post('/api/run-genres', async (req, res) => {
+  res.json({ ok: true });
+  const { runGenreTagger } = await import('./genre-tagger.js');
+  runGenreTagger().catch(err => log('error', err.message));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => log('info', `🌐 Rules UI at http://localhost:${PORT}`));
 
