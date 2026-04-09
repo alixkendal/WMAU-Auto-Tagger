@@ -37,18 +37,21 @@ async function gql(token, query, variables = {}) {
 async function fetchProductsWithProductPrefix(token) {
   const products = [];
   let cursor = null;
+  let totalFetched = 0;
 
   while (true) {
     const data = await gql(token, `
       query($cursor: String) {
-        products(first: 250, after: $cursor, query: "tag:Product:*") {
+        products(first: 250, after: $cursor) {
           pageInfo { hasNextPage endCursor }
           nodes { id title tags }
         }
       }
     `, { cursor });
 
-    // Only keep products that actually have Product:X tags
+    totalFetched += data.products.nodes.length;
+
+    // Filter client-side — wildcard tag queries are unreliable in Shopify
     for (const p of data.products.nodes) {
       if (p.tags.some(t => t.startsWith('Product:'))) {
         products.push(p);
@@ -57,7 +60,7 @@ async function fetchProductsWithProductPrefix(token) {
 
     if (!data.products.pageInfo.hasNextPage) break;
     cursor = data.products.pageInfo.endCursor;
-    console.log(`  Fetched ${products.length} matching products so far…`);
+    console.log(`  Scanned ${totalFetched} products, found ${products.length} to clean up so far…`);
   }
 
   return products;
