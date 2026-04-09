@@ -71,6 +71,12 @@ app.post('/api/run-genres', async (req, res) => {
   runGenreTagger().catch(err => log('error', err.message));
 });
 
+app.post('/api/backfill-product-prefix', async (req, res) => {
+  res.json({ ok: true, message: 'Product: prefix cleanup started — check Railway logs' });
+  const { backfillRemoveProductPrefix } = await import('./backfill-remove-product-prefix.js');
+  backfillRemoveProductPrefix().catch(err => log('error', err.message));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => log('info', `🌐 Rules UI at http://localhost:${PORT}`));
 
