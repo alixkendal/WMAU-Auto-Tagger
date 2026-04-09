@@ -234,6 +234,20 @@
             <span class="timeline-arrow">→</span>
             <span>neither</span>
           </div>
+          <div class="toggle-row">
+            <div class="toggle-row-text">
+              <span class="toggle-row-label">Auto-generate RD:DDMMYY tag</span>
+              <span class="toggle-row-hint">Adds e.g. <strong>RD:290526</strong> from the metafield date</span>
+            </div>
+            <button class="mini-toggle on" id="rd-tag-toggle" onclick="toggleRdTag()"></button>
+          </div>
+          <div class="toggle-row" id="rd-keep-row">
+            <div class="toggle-row-text">
+              <span class="toggle-row-label">Keep RD: tag after release window</span>
+              <span class="toggle-row-hint">Turn off to remove it once the "after" tag period ends</span>
+            </div>
+            <button class="mini-toggle on" id="rd-keep-toggle" onclick="toggleRdKeep()"></button>
+          </div>
         </div>
       </div>
 
@@ -250,6 +264,19 @@ let rules = [];
 let editingId = null;
 let autoRemoveState = false;
 let ruleType = 'standard';
+let rdTagState = true;
+let rdKeepState = true;
+
+function toggleRdTag() {
+  rdTagState = !rdTagState;
+  document.getElementById('rd-tag-toggle').classList.toggle('on', rdTagState);
+  document.getElementById('rd-keep-row').style.display = rdTagState ? '' : 'none';
+}
+
+function toggleRdKeep() {
+  rdKeepState = !rdKeepState;
+  document.getElementById('rd-keep-toggle').classList.toggle('on', rdKeepState);
+}
 
 const CONDITIONS = [
   { value: 'product_type_is',       label: 'Product type is',        hint: 'e.g. cap' },
@@ -427,6 +454,11 @@ function editRule(id) {
     document.getElementById('f-before-tag').value   = rule.beforeTag || '';
     document.getElementById('f-after-tag').value    = rule.afterTag  || '';
     document.getElementById('f-window-days').value  = rule.windowDays || 30;
+    rdTagState  = rule.generateRdTag !== false;
+    rdKeepState = rule.keepRdTag !== false;
+    document.getElementById('rd-tag-toggle').classList.toggle('on', rdTagState);
+    document.getElementById('rd-keep-toggle').classList.toggle('on', rdKeepState);
+    document.getElementById('rd-keep-row').style.display = rdTagState ? '' : 'none';
     updateTimeline();
   } else {
     document.getElementById('conditions-list').innerHTML = '';
@@ -449,7 +481,7 @@ async function saveRule() {
     const windowDays  = document.getElementById('f-window-days').value;
     const metafieldKey = document.getElementById('f-metafield-key').value;
     if (!beforeTag || !afterTag) { alert('Please fill in both tag fields.'); return; }
-    payload = { description: desc, type: 'release_date', metafieldKey, beforeTag, afterTag, windowDays };
+    payload = { description: desc, type: 'release_date', metafieldKey, beforeTag, afterTag, windowDays, generateRdTag: rdTagState, keepRdTag: rdKeepState };
   } else {
     const conditions = getConditionRows();
     const tags = document.getElementById('f-tags').value.trim();
@@ -504,6 +536,10 @@ function openModal() {
     document.getElementById('f-window-days').value = 30;
     setRuleType('standard');
     setAutoRemove(false);
+    rdTagState = true; rdKeepState = true;
+    document.getElementById('rd-tag-toggle').classList.add('on');
+    document.getElementById('rd-keep-toggle').classList.add('on');
+    document.getElementById('rd-keep-row').style.display = '';
     addConditionRow();
     updateTimeline();
   }
