@@ -252,6 +252,7 @@ const CONDITIONS = [
   { value: 'older_than_days',       label: 'Older than (days)',      hint: 'e.g. 180' },
   { value: 'status_is',             label: 'Status is',              hint: 'active, draft, archived' },
   { value: 'title_contains',        label: 'Title contains',         hint: 'e.g. vintage' },
+  { value: 'has_tag',               label: 'Has tag',                hint: 'e.g. Product:Merch' },
 ];
 const COND_LABEL = Object.fromEntries(CONDITIONS.map(c => [c.value, c.label]));
 const selectHTML = CONDITIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
