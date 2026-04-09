@@ -134,6 +134,7 @@ function evaluateCondition(c, product) {
     case 'older_than_days':       return daysSince(product.created_at) > parseInt(val);
     case 'status_is':             return product.status === val;
     case 'title_contains':        return product.title?.toLowerCase().includes(val.toLowerCase());
+    case 'has_tag':               return parseTags(product.tags).some(t => t.toLowerCase() === val.toLowerCase());
     default: return false;
   }
 }
