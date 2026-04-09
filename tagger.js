@@ -80,7 +80,7 @@ async function applyRulesToProduct(product, rules) {
 // Release date rule logic
 // ---------------------------------------------------------------------------
 function applyReleaseDateRule(rule, product, toAdd, toRemove) {
-  const metafieldKey = rule.metafieldKey; // e.g. "pre_order_date"
+  const metafieldKey = rule.metafieldKey;
   const dateStr = product.metafields?.[metafieldKey];
 
   // No metafield set — ignore this product for this rule
@@ -91,19 +91,35 @@ function applyReleaseDateRule(rule, product, toAdd, toRemove) {
   const windowDays = parseInt(rule.windowDays) || 30;
   const daysSinceRelease = (now - releaseDate) / 86400000;
 
+  // Generate RD:DDMMYY tag from the metafield date
+  const rdTag = formatRDTag(releaseDate);
+  const keepRD = rule.keepRdTag !== false; // default true
+
   if (daysSinceRelease < 0) {
-    // Before release date → "before" tag
+    // Before release date
     toAdd.add(rule.beforeTag);
+    toAdd.add(rdTag);
     toRemove.add(rule.afterTag);
   } else if (daysSinceRelease <= windowDays) {
-    // Within window after release → "after" tag
+    // Within window after release
     toRemove.add(rule.beforeTag);
     toAdd.add(rule.afterTag);
+    toAdd.add(rdTag);
   } else {
-    // Beyond window → remove both
+    // Beyond window — remove before/after, RD tag depends on toggle
     toRemove.add(rule.beforeTag);
     toRemove.add(rule.afterTag);
+    if (keepRD) toAdd.add(rdTag);
+    else toRemove.add(rdTag);
   }
+}
+
+// Format a date as RD:DDMMYY  e.g. 2026-05-29 → "RD:290526"
+function formatRDTag(date) {
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const yy = String(date.getUTCFullYear()).slice(-2);
+  return `RD:${dd}${mm}${yy}`;
 }
 
 // ---------------------------------------------------------------------------
