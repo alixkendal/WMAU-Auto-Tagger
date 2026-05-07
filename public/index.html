@@ -135,6 +135,16 @@
 
   <div class="card">
     <div class="card-header">
+      <span class="card-title">Collection genre backfill</span>
+      <button class="btn btn-run" id="genre-backfill-btn" onclick="runGenreBackfill()">Run backfill</button>
+    </div>
+    <div style="padding:14px 20px;font-size:13px;color:#6d7175;">
+      Reads the missing genres spreadsheet from GitHub and sets <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">custom.genre</code> on artist collections. Merges with existing genres — safe to re-run.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
       <span class="card-title">Artist genre sync</span>
       <button class="btn btn-run" id="genre-run-btn" onclick="runGenreNow()">Sync genres now</button>
     </div>
@@ -507,6 +517,20 @@ async function saveRule() {
     rules.push(await res.json());
   }
   closeModal(); render();
+}
+
+async function runGenreBackfill() {
+  if (!confirm('This will set genre metafields on artist collections from the GitHub spreadsheet. Continue?')) return;
+  const btn = document.getElementById('genre-backfill-btn');
+  btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Collection genre backfill in progress…';
+  await fetch('/api/backfill-collection-genres',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Done ✓'; btn.disabled=true;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Genre backfill triggered — check Railway logs for results';
+  },2000);
 }
 
 async function runPrefixCleanup() {
