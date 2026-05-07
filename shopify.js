@@ -65,6 +65,7 @@ export async function fetchAllProducts() {
             }
             pre_order_date: metafield(namespace: "custom", key: "pre_order_date") { value }
             back_order_date: metafield(namespace: "custom", key: "back_order_date") { value }
+            pre_order_override: metafield(namespace: "custom", key: "pre_order_override") { value }
           }
         }
       }
@@ -98,6 +99,7 @@ export async function fetchAllProducts() {
         metafields: {
           pre_order_date: p.pre_order_date?.value || null,
           back_order_date: p.back_order_date?.value || null,
+          pre_order_override: p.pre_order_override?.value === "true",
         },
       });
     }
