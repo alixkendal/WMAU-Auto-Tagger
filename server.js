@@ -77,6 +77,12 @@ app.post('/api/backfill-product-prefix', async (req, res) => {
   backfillRemoveProductPrefix().catch(err => log('error', err.message));
 });
 
+app.post('/api/backfill-collection-genres', async (req, res) => {
+  res.json({ ok: true, message: 'Collection genre backfill started — check Railway logs' });
+  const { backfillCollectionGenres } = await import('./backfill-collection-genres.js');
+  backfillCollectionGenres().catch(err => log('error', err.message));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => log('info', `🌐 Rules UI at http://localhost:${PORT}`));
 

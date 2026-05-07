@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto-Tagger Rules</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: #1a1a1a; background: #f6f6f7; min-height: 100vh; }
+  .topbar { background: #fff; border-bottom: 1px solid #e1e3e5; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-title { font-size: 16px; font-weight: 600; }
+  .topbar-sub { font-size: 13px; color: #6d7175; margin-top: 1px; }
+  .page { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+  .card { background: #fff; border: 1px solid #e1e3e5; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e1e3e5; display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-weight: 600; font-size: 14px; }
+  .rule-list { list-style: none; }
+  .rule-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #f1f1f1; transition: background 0.1s; }
+  .rule-item:last-child { border-bottom: none; }
+  .rule-item:hover { background: #fafafa; }
+  .rule-toggle { flex-shrink: 0; width: 36px; height: 20px; background: #e1e3e5; border-radius: 10px; position: relative; cursor: pointer; border: none; transition: background 0.2s; }
+  .rule-toggle.on { background: #008060; }
+  .rule-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .rule-toggle.on::after { transform: translateX(16px); }
+  .rule-info { flex: 1; min-width: 0; }
+  .rule-desc { font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rule-detail { font-size: 12px; color: #6d7175; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rule-tags { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+  .tag-pill { background: #f1f1f1; color: #1a1a1a; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .tag-pill-before { background: #fdf0e0; color: #7d4e00; }
+  .tag-pill-after  { background: #e6f4ee; color: #006e52; }
+  .rule-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-icon { background: none; border: 1px solid #e1e3e5; border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6d7175; font-size: 15px; transition: all 0.1s; }
+  .btn-icon:hover { background: #f6f6f7; color: #1a1a1a; }
+  .btn-icon.danger:hover { background: #fff4f4; color: #d82c0d; border-color: #d82c0d; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.1s; }
+  .btn-primary { background: #008060; color: #fff; border-color: #008060; }
+  .btn-primary:hover { background: #006e52; }
+  .btn-secondary { background: #fff; color: #1a1a1a; border-color: #c9cccf; }
+  .btn-secondary:hover { background: #f6f6f7; }
+  .btn-run { background: #f1f1f1; color: #1a1a1a; border-color: #e1e3e5; }
+  .btn-run:hover { background: #e1e3e5; }
+  .btn-run.running { opacity: 0.6; cursor: not-allowed; }
+  .btn-link { background: none; border: none; color: #008060; font-size: 13px; cursor: pointer; padding: 0; font-weight: 500; }
+  .btn-link:hover { text-decoration: underline; }
+  .empty-state { padding: 48px 20px; text-align: center; color: #6d7175; }
+
+  .badge { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .badge-dynamic   { background: #e3f1fd; color: #0d5c8a; }
+  .badge-permanent { background: #f1f1f1; color: #6d7175; }
+  .badge-date      { background: #fdf0e0; color: #7d4e00; }
+
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: #fff; border-radius: 8px; width: 100%; max-width: 580px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column; }
+  .modal-header { padding: 20px 20px 16px; border-bottom: 1px solid #e1e3e5; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .modal-title { font-size: 16px; font-weight: 600; }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid #e1e3e5; display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 13px; font-weight: 500; }
+  .form-hint { font-size: 12px; color: #6d7175; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .section-label { font-size: 11px; font-weight: 600; color: #6d7175; text-transform: uppercase; letter-spacing: 0.5px; }
+  input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px; border: 1px solid #c9cccf; border-radius: 6px; font-size: 14px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.15s; font-family: inherit; }
+  input:focus, select:focus { border-color: #008060; box-shadow: 0 0 0 2px rgba(0,128,96,0.15); }
+
+  /* Rule type tabs */
+  .type-tabs { display: flex; gap: 8px; }
+  .type-tab { flex: 1; padding: 10px; border: 1px solid #e1e3e5; border-radius: 6px; background: #fff; cursor: pointer; text-align: center; font-size: 13px; font-weight: 500; color: #6d7175; transition: all 0.15s; }
+  .type-tab.active { border-color: #008060; background: #e6f4ee; color: #006e52; }
+  .type-tab:hover:not(.active) { background: #f6f6f7; }
+  .type-tab-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+  /* Section divider */
+  .divider { border: none; border-top: 1px solid #e1e3e5; margin: 0 -20px; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #f6f6f7; border-radius: 6px; padding: 12px 14px; }
+  .toggle-row-text { display: flex; flex-direction: column; gap: 2px; }
+  .toggle-row-label { font-size: 13px; font-weight: 500; }
+  .toggle-row-hint { font-size: 12px; color: #6d7175; }
+  .mini-toggle { flex-shrink: 0; width: 36px; height: 20px; background: #e1e3e5; border-radius: 10px; position: relative; cursor: pointer; border: none; transition: background 0.2s; }
+  .mini-toggle.on { background: #008060; }
+  .mini-toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .mini-toggle.on::after { transform: translateX(16px); }
+
+  .conditions-list { display: flex; flex-direction: column; gap: 6px; }
+  .condition-row { display: flex; align-items: center; gap: 8px; }
+  .logic-toggle { flex-shrink: 0; display: flex; border: 1px solid #c9cccf; border-radius: 6px; overflow: hidden; }
+  .logic-btn { background: #fff; border: none; padding: 0 10px; height: 36px; font-size: 12px; font-weight: 600; cursor: pointer; color: #6d7175; transition: all 0.15s; }
+  .logic-btn.active-or  { background: #e3f1fd; color: #0d5c8a; }
+  .logic-btn.active-and { background: #e6f4ee; color: #006e52; }
+  .logic-spacer { flex-shrink: 0; width: 57px; }
+  .condition-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+  .condition-remove { background: none; border: none; color: #8c9196; cursor: pointer; font-size: 20px; line-height: 1; flex-shrink: 0; padding: 0 2px; }
+  .condition-remove:hover { color: #d82c0d; }
+
+  .status-bar { background: #f6f6f7; border: 1px solid #e1e3e5; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #6d7175; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #008060; flex-shrink: 0; }
+  .status-dot.idle { background: #8c9196; }
+
+  /* Release date fields */
+  .release-fields { display: flex; flex-direction: column; gap: 12px; }
+  .timeline { display: flex; align-items: center; gap: 8px; background: #f6f6f7; border-radius: 6px; padding: 12px 14px; font-size: 12px; color: #6d7175; }
+  .timeline-arrow { color: #c9cccf; }
+  .timeline-tag { font-weight: 600; color: #1a1a1a; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Auto-Tagger</div>
+    <div class="topbar-sub">Warner Music Australia</div>
+  </div>
+  <button class="btn btn-run" id="run-btn" onclick="runNow()">Run now</button>
+</div>
+
+<div class="page">
+  <div class="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Ready — rules run every hour automatically</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">One-time cleanup</span>
+      <button class="btn btn-run" id="prefix-run-btn" onclick="runPrefixCleanup()">Run cleanup</button>
+    </div>
+    <div style="padding:14px 20px;font-size:13px;color:#6d7175;">
+      Strips <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Product:</code> prefix from all product tags store-wide — e.g. <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Product:Hat</code> → <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Hat</code>. Run once, then this card can be ignored.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Collection genre backfill</span>
+      <button class="btn btn-run" id="genre-backfill-btn" onclick="runGenreBackfill()">Run backfill</button>
+    </div>
+    <div style="padding:14px 20px;font-size:13px;color:#6d7175;">
+      Reads the missing genres spreadsheet from GitHub and sets <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">custom.genre</code> on artist collections. Merges with existing genres — safe to re-run.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Artist genre sync</span>
+      <button class="btn btn-run" id="genre-run-btn" onclick="runGenreNow()">Sync genres now</button>
+    </div>
+    <div style="padding:14px 20px;font-size:13px;color:#6d7175;">
+      Reads <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">custom.genre</code> from all artist collections and adds <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Genre:X</code> tags to their products. Runs automatically at 30 minutes past each hour. Also normalises any <code style="background:#f1f1f1;padding:1px 5px;border-radius:3px;">Genre: Rock</code> spacing issues. Never removes genre tags.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Tagging rules</span>
+      <button class="btn btn-primary" onclick="openModal()">+ Add rule</button>
+    </div>
+    <ul class="rule-list" id="rule-list">
+      <li class="empty-state"><p>No rules yet.</p></li>
+    </ul>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add rule</span>
+      <button class="btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Rule name -->
+      <div class="form-group">
+        <label class="form-label">Rule name</label>
+        <input type="text" id="f-desc" placeholder="e.g. Pre-orders">
+      </div>
+
+      <!-- Rule type tabs -->
+      <div class="form-group">
+        <div class="section-label" style="margin-bottom:8px">Rule type</div>
+        <div class="type-tabs">
+          <button class="type-tab active" id="tab-standard" onclick="setRuleType('standard')">
+            <span class="type-tab-icon">🏷</span>
+            Condition-based
+          </button>
+          <button class="type-tab" id="tab-release_date" onclick="setRuleType('release_date')">
+            <span class="type-tab-icon">📅</span>
+            Release date
+          </button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Standard rule fields -->
+      <div id="standard-fields">
+        <div class="form-group">
+          <div class="section-label" style="margin-bottom:6px">Conditions — match any of these</div>
+          <div class="conditions-list" id="conditions-list"></div>
+          <button class="btn-link" style="margin-top:10px" onclick="addConditionRow()">+ Add condition</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags to apply</label>
+          <input type="text" id="f-tags" placeholder="e.g. Product:Hat, Page:Merch">
+          <span class="form-hint">Comma-separated.</span>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <span class="toggle-row-label">Remove tags when condition no longer matches</span>
+            <span class="toggle-row-hint">Turn off for permanent classifications like product type</span>
+          </div>
+          <button class="mini-toggle" id="auto-remove-toggle" onclick="toggleAutoRemove()"></button>
+        </div>
+      </div>
+
+      <!-- Release date rule fields -->
+      <div id="release-date-fields" style="display:none">
+        <div class="release-fields">
+          <div class="form-group">
+            <label class="form-label">Metafield key</label>
+            <select id="f-metafield-key">
+              <option value="pre_order_date">pre_order_date</option>
+              <option value="back_order_date">back_order_date</option>
+            </select>
+            <span class="form-hint">The custom metafield set on the product in Shopify.</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Before date tag</label>
+              <input type="text" id="f-before-tag" placeholder="e.g. Pre-Order">
+            </div>
+            <div class="form-group">
+              <label class="form-label">After date tag</label>
+              <input type="text" id="f-after-tag" placeholder="e.g. Just In">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Window after release (days)</label>
+            <input type="number" id="f-window-days" value="30" min="1" style="width:120px">
+            <span class="form-hint">How long to show the "after" tag before removing it.</span>
+          </div>
+          <!-- Visual timeline -->
+          <div class="timeline" id="timeline-preview">
+            <span class="timeline-tag" id="tl-before">Pre-Order</span>
+            <span class="timeline-arrow">→</span>
+            <span style="color:#008060;font-weight:600">Release date</span>
+            <span class="timeline-arrow">→</span>
+            <span class="timeline-tag" id="tl-after">Just In</span>
+            <span style="font-style:italic">(for <span id="tl-days">30</span> days)</span>
+            <span class="timeline-arrow">→</span>
+            <span>neither</span>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-text">
+              <span class="toggle-row-label">Auto-generate RD:DDMMYY tag</span>
+              <span class="toggle-row-hint">Adds e.g. <strong>RD:290526</strong> from the metafield date</span>
+            </div>
+            <button class="mini-toggle on" id="rd-tag-toggle" onclick="toggleRdTag()"></button>
+          </div>
+          <div class="toggle-row" id="rd-keep-row">
+            <div class="toggle-row-text">
+              <span class="toggle-row-label">Keep RD: tag after release window</span>
+              <span class="toggle-row-hint">Turn off to remove it once the "after" tag period ends</span>
+            </div>
+            <button class="mini-toggle on" id="rd-keep-toggle" onclick="toggleRdKeep()"></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRule()">Save rule</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let rules = [];
+let editingId = null;
+let autoRemoveState = false;
+let ruleType = 'standard';
+let rdTagState = true;
+let rdKeepState = true;
+
+function toggleRdTag() {
+  rdTagState = !rdTagState;
+  document.getElementById('rd-tag-toggle').classList.toggle('on', rdTagState);
+  document.getElementById('rd-keep-row').style.display = rdTagState ? '' : 'none';
+}
+
+function toggleRdKeep() {
+  rdKeepState = !rdKeepState;
+  document.getElementById('rd-keep-toggle').classList.toggle('on', rdKeepState);
+}
+
+const CONDITIONS = [
+  { value: 'product_type_is',       label: 'Product type is',        hint: 'e.g. cap' },
+  { value: 'product_type_contains', label: 'Product type contains',  hint: 'e.g. shirt' },
+  { value: 'inventory_lt',          label: 'Inventory less than',    hint: 'e.g. 10' },
+  { value: 'inventory_eq',          label: 'Inventory equals',       hint: 'e.g. 0' },
+  { value: 'inventory_gt',          label: 'Inventory greater than', hint: 'e.g. 100' },
+  { value: 'vendor_is',             label: 'Vendor is',              hint: 'e.g. Nike' },
+  { value: 'created_within_days',   label: 'Created within (days)',  hint: 'e.g. 90' },
+  { value: 'older_than_days',       label: 'Older than (days)',      hint: 'e.g. 180' },
+  { value: 'status_is',             label: 'Status is',              hint: 'active, draft, archived' },
+  { value: 'title_contains',        label: 'Title contains',         hint: 'e.g. vintage' },
+  { value: 'has_tag',               label: 'Has tag',                hint: 'e.g. Product:Merch' },
+];
+const COND_LABEL = Object.fromEntries(CONDITIONS.map(c => [c.value, c.label]));
+const selectHTML = CONDITIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+
+function setRuleType(type) {
+  ruleType = type;
+  document.getElementById('tab-standard').classList.toggle('active', type === 'standard');
+  document.getElementById('tab-release_date').classList.toggle('active', type === 'release_date');
+  document.getElementById('standard-fields').style.display = type === 'standard' ? '' : 'none';
+  document.getElementById('release-date-fields').style.display = type === 'release_date' ? '' : 'none';
+}
+
+function updateTimeline() {
+  document.getElementById('tl-before').textContent = document.getElementById('f-before-tag').value || 'Before tag';
+  document.getElementById('tl-after').textContent  = document.getElementById('f-after-tag').value  || 'After tag';
+  document.getElementById('tl-days').textContent   = document.getElementById('f-window-days').value || '30';
+}
+// Live preview
+document.addEventListener('input', e => {
+  if (['f-before-tag','f-after-tag','f-window-days'].includes(e.target.id)) updateTimeline();
+});
+
+function setAutoRemove(val) {
+  autoRemoveState = val;
+  document.getElementById('auto-remove-toggle').classList.toggle('on', val);
+}
+function toggleAutoRemove() { setAutoRemove(!autoRemoveState); }
+
+function addConditionRow(condition = 'product_type_is', value = '', logic = 'OR') {
+  const list = document.getElementById('conditions-list');
+  const isFirst = list.children.length === 0;
+  const id = Date.now() + Math.random();
+  const hint = CONDITIONS.find(c => c.value === condition)?.hint || '';
+  const row = document.createElement('div');
+  row.className = 'condition-row';
+  row.dataset.id = id;
+  if (isFirst) {
+    row.innerHTML = `
+      <div class="logic-spacer"></div>
+      <div class="condition-fields">
+        <select onchange="updateHint(this)">${selectHTML}</select>
+        <input type="text" placeholder="${hint}" value="${value}">
+      </div>
+      <button class="condition-remove" onclick="removeConditionRow(this)">×</button>`;
+  } else {
+    row.innerHTML = `
+      <div class="logic-toggle">
+        <button class="logic-btn ${logic==='OR'?'active-or':''}" onclick="setLogic(this,'OR')">OR</button>
+        <button class="logic-btn ${logic==='AND'?'active-and':''}" onclick="setLogic(this,'AND')">AND</button>
+      </div>
+      <div class="condition-fields">
+        <select onchange="updateHint(this)">${selectHTML}</select>
+        <input type="text" placeholder="${hint}" value="${value}">
+      </div>
+      <button class="condition-remove" onclick="removeConditionRow(this)">×</button>`;
+  }
+  row.querySelector('select').value = condition;
+  list.appendChild(row);
+}
+
+function setLogic(btn, logic) {
+  btn.closest('.logic-toggle').querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active-or','active-and'));
+  btn.classList.add(logic==='OR'?'active-or':'active-and');
+}
+
+function removeConditionRow(btn) {
+  btn.closest('.condition-row').remove();
+  const first = document.getElementById('conditions-list').querySelector('.condition-row');
+  if (first?.querySelector('.logic-toggle')) {
+    const spacer = document.createElement('div');
+    spacer.className = 'logic-spacer';
+    first.querySelector('.logic-toggle').replaceWith(spacer);
+  }
+}
+
+function updateHint(select) {
+  const hint = CONDITIONS.find(c => c.value === select.value)?.hint || '';
+  select.closest('.condition-fields').querySelector('input').placeholder = hint;
+}
+
+function getConditionRows() {
+  return [...document.getElementById('conditions-list').querySelectorAll('.condition-row')].map((row,i) => {
+    const toggle = row.querySelector('.logic-toggle');
+    return {
+      logic: i === 0 ? null : (toggle?.querySelector('.active-and') ? 'AND' : 'OR'),
+      condition: row.querySelector('select').value,
+      conditionValue: row.querySelector('input').value.trim(),
+    };
+  }).filter(c => c.conditionValue);
+}
+
+async function load() {
+  rules = await fetch('/api/rules').then(r => r.json());
+  render();
+}
+
+function describeRule(rule) {
+  if (rule.type === 'release_date') {
+    return `Metafield: ${rule.metafieldKey} · window: ${rule.windowDays} days`;
+  }
+  const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
+  return conds.map((c,i) => {
+    const prefix = i === 0 ? '' : `<span style="color:#008060;font-weight:600"> ${c.logic||'OR'} </span>`;
+    return `${prefix}${COND_LABEL[c.condition]||c.condition} <strong>${c.conditionValue}</strong>`;
+  }).join('');
+}
+
+function renderTags(rule) {
+  if (rule.type === 'release_date') {
+    return `<span class="tag-pill tag-pill-before">${rule.beforeTag}</span>
+            <span style="font-size:11px;color:#6d7175">→</span>
+            <span class="tag-pill tag-pill-after">${rule.afterTag}</span>`;
+  }
+  return rule.tags.split(',').map(t=>`<span class="tag-pill">${t.trim()}</span>`).join('');
+}
+
+function renderBadge(rule) {
+  if (rule.type === 'release_date') return `<span class="badge badge-date">release date</span>`;
+  return rule.autoRemove !== false
+    ? `<span class="badge badge-dynamic">dynamic</span>`
+    : `<span class="badge badge-permanent">permanent</span>`;
+}
+
+function render() {
+  const list = document.getElementById('rule-list');
+  if (!rules.length) { list.innerHTML = `<li class="empty-state"><p>No rules yet.</p></li>`; return; }
+  list.innerHTML = rules.map(r => `
+    <li class="rule-item">
+      <button class="rule-toggle ${r.enabled?'on':''}" onclick="toggleRule('${r.id}')"></button>
+      <div class="rule-info">
+        <div class="rule-desc">${r.description||'Unnamed'} ${renderBadge(r)}</div>
+        <div class="rule-detail">${describeRule(r)}</div>
+      </div>
+      <div class="rule-tags">${renderTags(r)}</div>
+      <div class="rule-actions">
+        <button class="btn-icon" onclick="editRule('${r.id}')">✎</button>
+        <button class="btn-icon danger" onclick="deleteRule('${r.id}')">✕</button>
+      </div>
+    </li>`).join('');
+}
+
+async function toggleRule(id) {
+  const rule = rules.find(r=>r.id===id);
+  await fetch(`/api/rules/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!rule.enabled})});
+  rule.enabled=!rule.enabled; render();
+}
+
+async function deleteRule(id) {
+  if(!confirm('Delete this rule?')) return;
+  await fetch(`/api/rules/${id}`,{method:'DELETE'});
+  rules=rules.filter(r=>r.id!==id); render();
+}
+
+function editRule(id) {
+  const rule = rules.find(r=>r.id===id);
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit rule';
+  document.getElementById('f-desc').value = rule.description;
+  setRuleType(rule.type || 'standard');
+  if (rule.type === 'release_date') {
+    document.getElementById('f-metafield-key').value = rule.metafieldKey || 'pre_order_date';
+    document.getElementById('f-before-tag').value   = rule.beforeTag || '';
+    document.getElementById('f-after-tag').value    = rule.afterTag  || '';
+    document.getElementById('f-window-days').value  = rule.windowDays || 30;
+    rdTagState  = rule.generateRdTag !== false;
+    rdKeepState = rule.keepRdTag !== false;
+    document.getElementById('rd-tag-toggle').classList.toggle('on', rdTagState);
+    document.getElementById('rd-keep-toggle').classList.toggle('on', rdKeepState);
+    document.getElementById('rd-keep-row').style.display = rdTagState ? '' : 'none';
+    updateTimeline();
+  } else {
+    document.getElementById('conditions-list').innerHTML = '';
+    const conds = rule.conditions || [{ condition: rule.condition, conditionValue: rule.conditionValue, logic: null }];
+    conds.forEach(c => addConditionRow(c.condition, c.conditionValue, c.logic||'OR'));
+    document.getElementById('f-tags').value = rule.tags || '';
+    setAutoRemove(rule.autoRemove !== false);
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+async function saveRule() {
+  const desc = document.getElementById('f-desc').value.trim();
+  if (!desc) { alert('Please enter a rule name.'); return; }
+
+  let payload;
+  if (ruleType === 'release_date') {
+    const beforeTag   = document.getElementById('f-before-tag').value.trim();
+    const afterTag    = document.getElementById('f-after-tag').value.trim();
+    const windowDays  = document.getElementById('f-window-days').value;
+    const metafieldKey = document.getElementById('f-metafield-key').value;
+    if (!beforeTag || !afterTag) { alert('Please fill in both tag fields.'); return; }
+    payload = { description: desc, type: 'release_date', metafieldKey, beforeTag, afterTag, windowDays, generateRdTag: rdTagState, keepRdTag: rdKeepState };
+  } else {
+    const conditions = getConditionRows();
+    const tags = document.getElementById('f-tags').value.trim();
+    if (!conditions.length || !tags) { alert('Please add at least one condition and tags.'); return; }
+    payload = { description: desc, type: 'standard', conditions, tags, autoRemove: autoRemoveState };
+  }
+
+  if (editingId) {
+    const res = await fetch(`/api/rules/${editingId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    rules[rules.findIndex(r=>r.id===editingId)] = await res.json();
+  } else {
+    const res = await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    rules.push(await res.json());
+  }
+  closeModal(); render();
+}
+
+async function runGenreBackfill() {
+  if (!confirm('This will set genre metafields on artist collections from the GitHub spreadsheet. Continue?')) return;
+  const btn = document.getElementById('genre-backfill-btn');
+  btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Collection genre backfill in progress…';
+  await fetch('/api/backfill-collection-genres',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Done ✓'; btn.disabled=true;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Genre backfill triggered — check Railway logs for results';
+  },2000);
+}
+
+async function runPrefixCleanup() {
+  if (!confirm('This will strip "Product:" from all product tags store-wide. Continue?')) return;
+  const btn = document.getElementById('prefix-run-btn');
+  btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Product: prefix cleanup in progress…';
+  await fetch('/api/backfill-product-prefix',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Done ✓'; btn.disabled=true;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Cleanup triggered — check Railway logs for results';
+  },2000);
+}
+
+async function runGenreNow() {
+  const btn = document.getElementById('genre-run-btn');
+  btn.textContent='Syncing…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Genre sync in progress…';
+  await fetch('/api/run-genres',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Sync genres now'; btn.classList.remove('running'); btn.disabled=false;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Genre sync triggered — check Railway logs for results';
+  },2000);
+}
+
+async function runNow() {
+  const btn = document.getElementById('run-btn');
+  btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
+  document.getElementById('status-dot').classList.remove('idle');
+  document.getElementById('status-text').textContent='Tagging run in progress…';
+  await fetch('/api/run-now',{method:'POST'});
+  setTimeout(()=>{
+    btn.textContent='Run now'; btn.classList.remove('running'); btn.disabled=false;
+    document.getElementById('status-dot').classList.add('idle');
+    document.getElementById('status-text').textContent='Run triggered — check Railway logs for results';
+  },2000);
+}
+
+function openModal() {
+  if (!editingId) {
+    document.getElementById('modal-title').textContent = 'Add rule';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-tags').value = '';
+    document.getElementById('conditions-list').innerHTML = '';
+    document.getElementById('f-before-tag').value = '';
+    document.getElementById('f-after-tag').value  = '';
+    document.getElementById('f-window-days').value = 30;
+    setRuleType('standard');
+    setAutoRemove(false);
+    rdTagState = true; rdKeepState = true;
+    document.getElementById('rd-tag-toggle').classList.add('on');
+    document.getElementById('rd-keep-toggle').classList.add('on');
+    document.getElementById('rd-keep-row').style.display = '';
+    addConditionRow();
+    updateTimeline();
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { editingId=null; document.getElementById('modal').classList.remove('open'); }
+
+load();
+</script>
+</body>
+</html>
