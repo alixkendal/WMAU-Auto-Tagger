@@ -44,9 +44,17 @@ async function applyRulesToProduct(product, rules) {
   const toAdd = new Set();
   const toRemove = new Set();
 
+  // Auto-tag product type — always add, never remove
+  if (product.product_type?.trim()) toAdd.add(product.product_type.trim());
+
   for (const rule of rules) {
     if (rule.type === 'release_date') {
-      applyReleaseDateRule(rule, product, toAdd, toRemove);
+      // If pre-order override is on, skip normal date logic and force pre-order state
+      if (rule.metafieldKey === 'pre_order_date' && product.metafields?.pre_order_override) {
+        applyPreOrderOverride(rule, product, toAdd, toRemove);
+      } else {
+        applyReleaseDateRule(rule, product, toAdd, toRemove);
+      }
     } else {
       const matches = ruleMatches(rule, product);
       const autoRemove = rule.autoRemove !== false;
@@ -74,6 +82,29 @@ async function applyRulesToProduct(product, rules) {
   log('info', `  🏷  "${product.title}": ${changes.join(' | ')}`);
   await updateProductTags(product.gid || product.id, [...finalTags]);
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Pre-order override logic
+// Forces pre-order state regardless of date, suppresses afterTag (Just In)
+// ---------------------------------------------------------------------------
+function applyPreOrderOverride(rule, product, toAdd, toRemove) {
+  const dateStr = product.metafields?.pre_order_date;
+  const keepRD = rule.keepRdTag !== false;
+
+  // Force pre-order tag on
+  toAdd.add(rule.beforeTag);
+
+  // Actively remove afterTag (Just In)
+  toRemove.add(rule.afterTag);
+
+  // Still generate/keep RD tag if date is set
+  if (dateStr) {
+    const rdTag = formatRDTag(new Date(dateStr));
+    if (keepRD) toAdd.add(rdTag);
+  }
+
+  log('info', `  🔒 ${product.title} — pre-order override active`);
 }
 
 // ---------------------------------------------------------------------------
