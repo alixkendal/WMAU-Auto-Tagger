@@ -310,7 +310,7 @@ const CONDITIONS = [
   { value: 'status_is',             label: 'Status is',              hint: 'active, draft, archived' },
   { value: 'title_contains',        label: 'Title contains',         hint: 'e.g. vintage' },
   { value: 'has_tag',               label: 'Has tag',                hint: 'e.g. Product:Merch' },
-  { value: 'on_sale',               label: 'Has compare-at price',   hint: '(no value needed)' },
+  { value: 'on_sale',               label: 'Compare-at price > price', hint: '(no value needed)' },
 ];
 const COND_LABEL = Object.fromEntries(CONDITIONS.map(c => [c.value, c.label]));
 const selectHTML = CONDITIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
@@ -399,7 +399,7 @@ function getConditionRows() {
       condition: row.querySelector('select').value,
       conditionValue: row.querySelector('input').value.trim(),
     };
-  }).filter(c => c.conditionValue);
+  }).filter(c => c.conditionValue || c.condition === 'on_sale');
 }
 
 async function load() {
