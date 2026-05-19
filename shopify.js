@@ -61,7 +61,7 @@ export async function fetchAllProducts() {
             createdAt
             vendor
             variants(first: 100) {
-              nodes { inventoryQuantity }
+              nodes { inventoryQuantity compareAtPrice price }
             }
             pre_order_date: metafield(namespace: "custom", key: "pre_order_date") { value }
             back_order_date: metafield(namespace: "custom", key: "back_order_date") { value }
@@ -95,7 +95,11 @@ export async function fetchAllProducts() {
         tags: p.tags.join(', '),
         created_at: p.createdAt,
         vendor: p.vendor,
-        variants: p.variants.nodes.map(v => ({ inventory_quantity: v.inventoryQuantity ?? 0 })),
+        variants: p.variants.nodes.map(v => ({
+          inventory_quantity: v.inventoryQuantity ?? 0,
+          price: parseFloat(v.price ?? 0),
+          compare_at_price: v.compareAtPrice ? parseFloat(v.compareAtPrice) : null,
+        })),
         metafields: {
           pre_order_date: p.pre_order_date?.value || null,
           back_order_date: p.back_order_date?.value || null,

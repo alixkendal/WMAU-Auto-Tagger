@@ -182,6 +182,7 @@ function evaluateCondition(c, product) {
     case 'status_is':             return product.status === val;
     case 'title_contains':        return product.title?.toLowerCase().includes(val.toLowerCase());
     case 'has_tag':               return parseTags(product.tags).some(t => t.toLowerCase() === val.toLowerCase());
+    case 'on_sale':               return product.variants?.some(v => v.compare_at_price && v.compare_at_price > v.price);
     default: return false;
   }
 }
