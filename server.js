@@ -83,6 +83,12 @@ app.post('/api/backfill-collection-genres', async (req, res) => {
   backfillCollectionGenres().catch(err => log('error', err.message));
 });
 
+app.post('/api/backfill-preorder-dates', async (req, res) => {
+  res.json({ ok: true, message: 'Pre-order date backfill started — check Railway logs' });
+  const { backfillPreorderDates } = await import('./backfill-preorder-dates.js');
+  backfillPreorderDates().catch(err => log('error', err.message));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => log('info', `🌐 Rules UI at http://localhost:${PORT}`));
 
