@@ -33,22 +33,47 @@ initializeApp({
   }),
 });
 const db = getFirestore();
-// One rules document per store. RULES_DOC_ID defaults to 'rules' (the original
-// Warner Music Australia document), so existing deployments are unaffected.
-const RULES_DOC_ID = process.env.RULES_DOC_ID || 'rules';
-const RULES_DOC = db.collection('auto-tagger').doc(RULES_DOC_ID);
-const STORE_NAME = process.env.STORE_NAME || 'Warner Music Australia';
+// One rules document per store, named after the store unless RULES_DOC_ID says
+// otherwise: warner-music-australia.myshopify.com -> "rules-warner-music-australia".
+// No store is the built-in default, so two services can never share rules by accident.
+const SHOP_HANDLE = (process.env.SHOPIFY_SHOP || '').trim().toLowerCase().replace(/\.myshopify\.com$/, '');
+const RULES_DOC_ID = process.env.RULES_DOC_ID || (SHOP_HANDLE ? `rules-${SHOP_HANDLE}` : '');
+if (!RULES_DOC_ID) throw new Error('Set SHOPIFY_SHOP (or RULES_DOC_ID) so this service knows which rules to use.');
+const RULES = db.collection('auto-tagger');
+const RULES_DOC = RULES.doc(RULES_DOC_ID);
+const STORE_NAME = process.env.STORE_NAME || SHOP_HANDLE || RULES_DOC_ID;
 const DRY_RUN = process.env.DRY_RUN === 'true';
+// One-off rename helper: if this service's rules document does not exist yet, copy it
+// from the document named here (the source is left untouched). Remove once copied.
+const RULES_MIGRATE_FROM = process.env.RULES_MIGRATE_FROM;
 
+log('info', `📒 Store "${STORE_NAME}" — rules document "auto-tagger/${RULES_DOC_ID}"`);
+
+// Returns the saved rules, or the starter set when nothing has been saved yet.
+// Throws if Firestore can't be read: callers must not act on starter rules just
+// because the real ones were unreachable.
 export async function loadRules() {
-  try {
-    const snap = await RULES_DOC.get();
-    if (snap.exists) return snap.data().list || [];
-  } catch (err) {
-    log('error', `Firestore load failed: ${err.message}`);
+  const snap = await RULES_DOC.get();
+  if (snap.exists) return snap.data().list || [];
+
+  if (RULES_MIGRATE_FROM && RULES_MIGRATE_FROM !== RULES_DOC_ID) {
+    const source = await RULES.doc(RULES_MIGRATE_FROM).get();
+    if (source.exists) {
+      const list = source.data().list || [];
+      await RULES_DOC.set({ list });
+      log('info', `📒 Copied ${list.length} rules from "${RULES_MIGRATE_FROM}" to "${RULES_DOC_ID}"`);
+      return list;
+    }
+    log('warn', `RULES_MIGRATE_FROM="${RULES_MIGRATE_FROM}" not found — starting from the starter rules`);
   }
   return getDefaultRules();
 }
+
+// Express 4 doesn't catch rejected async handlers; answer 503 instead of crashing.
+const route = (handler) => (req, res) => handler(req, res).catch((err) => {
+  log('error', `${req.method} ${req.path} failed: ${err.message}`);
+  if (!res.headersSent) res.status(503).json({ error: 'Rules storage unavailable, try again shortly' });
+});
 
 async function saveRules(rules) {
   await RULES_DOC.set({ list: rules });
@@ -64,30 +89,30 @@ function blockedInDryRun(req, res, next) {
   res.status(409).json({ ok: false, message: 'Backfills are disabled while DRY_RUN=true' });
 }
 
-app.get('/api/rules', async (req, res) => { res.json(await loadRules()); });
+app.get('/api/rules', route(async (req, res) => { res.json(await loadRules()); }));
 
-app.post('/api/rules', async (req, res) => {
+app.post('/api/rules', route(async (req, res) => {
   const rules = await loadRules();
   const rule = { ...req.body, id: Date.now().toString(), enabled: true };
   rules.push(rule);
   await saveRules(rules);
   res.json(rule);
-});
+}));
 
-app.put('/api/rules/:id', async (req, res) => {
+app.put('/api/rules/:id', route(async (req, res) => {
   const rules = await loadRules();
   const idx = rules.findIndex(r => r.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   rules[idx] = { ...rules[idx], ...req.body };
   await saveRules(rules);
   res.json(rules[idx]);
-});
+}));
 
-app.delete('/api/rules/:id', async (req, res) => {
+app.delete('/api/rules/:id', route(async (req, res) => {
   const rules = (await loadRules()).filter(r => r.id !== req.params.id);
   await saveRules(rules);
   res.json({ ok: true });
-});
+}));
 
 app.post('/api/run-now', async (req, res) => {
   res.json({ ok: true });

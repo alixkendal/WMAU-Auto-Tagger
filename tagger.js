@@ -16,7 +16,13 @@ export async function runAllRules() {
     return;
   }
 
-  const rules = (await loadRules()).filter(r => r.enabled);
+  let rules;
+  try {
+    rules = (await loadRules()).filter(r => r.enabled);
+  } catch (err) {
+    log('error', `Could not load rules, skipping this run: ${err.message}`);
+    return;
+  }
   log('info', `📋 Applying ${rules.length} active rules`);
 
   const stats = { checked: 0, updated: 0, unchanged: 0, errors: 0 };
