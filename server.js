@@ -125,12 +125,6 @@ app.post('/api/run-genres', async (req, res) => {
   runGenreTagger().catch(err => log('error', err.message));
 });
 
-app.post('/api/backfill-product-prefix', blockedInDryRun, async (req, res) => {
-  res.json({ ok: true, message: 'Product: prefix cleanup started — check Railway logs' });
-  const { backfillRemoveProductPrefix } = await import('./backfill-remove-product-prefix.js');
-  backfillRemoveProductPrefix().catch(err => log('error', err.message));
-});
-
 app.post('/api/backfill-preorder-dates', blockedInDryRun, async (req, res) => {
   res.json({ ok: true, message: 'Pre-order date backfill started — check Railway logs' });
   const { backfillPreorderDates } = await import('./backfill-preorder-dates.js');
