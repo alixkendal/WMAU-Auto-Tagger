@@ -11,6 +11,8 @@ const API_VERSION = '2026-01';
 const CLIENT_ID     = process.env.SHOPIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 
+export const DRY_RUN = process.env.DRY_RUN === 'true';
+
 let cachedToken = null;
 let tokenExpiry = 0;
 
@@ -122,6 +124,8 @@ export async function fetchAllProducts() {
 // Update a single product's tags via GraphQL
 // ---------------------------------------------------------------------------
 export async function updateProductTags(productGid, tags) {
+  // DRY_RUN=true: log what would change (callers already log the diff) but write nothing
+  if (DRY_RUN) return { id: productGid, tags };
   const token = await getAccessToken();
   // Accept either a GID or a numeric ID
   const id = productGid.startsWith('gid://') ? productGid : `gid://shopify/Product/${productGid}`;

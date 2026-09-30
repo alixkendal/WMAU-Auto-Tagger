@@ -7,7 +7,7 @@
  */
 
 import { THROTTLE_MS } from './config.js';
-import { updateProductTags } from './shopify.js';
+import { updateProductTags, DRY_RUN } from './shopify.js';
 import { log } from './logger.js';
 
 const SHOP = process.env.SHOPIFY_SHOP;
@@ -155,7 +155,7 @@ function normaliseTags(tags) {
 // ---------------------------------------------------------------------------
 export async function runGenreTagger() {
   const startTime = Date.now();
-  log('info', '▶  Starting genre tagging run…');
+  log('info', `▶  Starting genre tagging run…${DRY_RUN ? ' (DRY RUN — no tags will be written)' : ''}`);
 
   let artistCollections;
   try {

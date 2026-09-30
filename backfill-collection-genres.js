@@ -14,7 +14,8 @@ const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 const API_VERSION   = '2026-01';
 const THROTTLE_MS   = 500;
 
-const EXCEL_URL = 'https://raw.githubusercontent.com/alixkendal/WMAU-Auto-Tagger/main/Shopify%20Collections_Missing%20Genres.xlsx';
+const EXCEL_URL = process.env.GENRE_BACKFILL_XLSX_URL
+  || 'https://raw.githubusercontent.com/alixkendal/WMAU-Auto-Tagger/main/Shopify%20Collections_Missing%20Genres.xlsx';
 
 // ---------------------------------------------------------------------------
 // Auth

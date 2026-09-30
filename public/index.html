@@ -112,7 +112,7 @@
 <div class="topbar">
   <div>
     <div class="topbar-title">Auto-Tagger</div>
-    <div class="topbar-sub">Warner Music Australia</div>
+    <div class="topbar-sub" id="store-name">Warner Music Australia</div>
   </div>
   <button class="btn btn-run" id="run-btn" onclick="runNow()">Run now</button>
 </div>
@@ -413,6 +413,10 @@ function getConditionRows() {
 }
 
 async function load() {
+  fetch('/api/config').then(r => r.json()).then(cfg => {
+    document.getElementById('store-name').textContent = cfg.storeName + (cfg.dryRun ? ' — DRY RUN (nothing is written)' : '');
+    document.title = 'Auto-Tagger Rules — ' + cfg.storeName;
+  }).catch(() => {});
   rules = await fetch('/api/rules').then(r => r.json());
   render();
 }

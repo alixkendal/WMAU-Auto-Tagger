@@ -1,11 +1,11 @@
 import { THROTTLE_MS } from './config.js';
-import { fetchAllProducts, updateProductTags } from './shopify.js';
+import { fetchAllProducts, updateProductTags, DRY_RUN } from './shopify.js';
 import { log } from './logger.js';
 import { loadRules } from './server.js';
 
 export async function runAllRules() {
   const startTime = Date.now();
-  log('info', '▶  Starting tagging run…');
+  log('info', `▶  Starting tagging run…${DRY_RUN ? ' (DRY RUN — no tags will be written)' : ''}`);
 
   let products;
   try {

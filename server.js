@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeApp, cert } from 'firebase-admin/app';
@@ -8,6 +9,19 @@ import { log } from './logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// Optional password for the rules UI + API. Set ADMIN_PASSWORD to turn it on
+// (any username). Without it the service is open to anyone with the URL.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (ADMIN_PASSWORD) {
+  app.use((req, res, next) => {
+    const [scheme, encoded] = (req.headers.authorization || '').split(' ');
+    const password = scheme === 'Basic' ? Buffer.from(encoded || '', 'base64').toString().split(':').slice(1).join(':') : '';
+    if (password === ADMIN_PASSWORD) return next();
+    res.set('WWW-Authenticate', 'Basic realm="Auto-Tagger"').status(401).send('Authentication required');
+  });
+}
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -19,7 +33,12 @@ initializeApp({
   }),
 });
 const db = getFirestore();
-const RULES_DOC = db.collection('auto-tagger').doc('rules');
+// One rules document per store. RULES_DOC_ID defaults to 'rules' (the original
+// Warner Music Australia document), so existing deployments are unaffected.
+const RULES_DOC_ID = process.env.RULES_DOC_ID || 'rules';
+const RULES_DOC = db.collection('auto-tagger').doc(RULES_DOC_ID);
+const STORE_NAME = process.env.STORE_NAME || 'Warner Music Australia';
+const DRY_RUN = process.env.DRY_RUN === 'true';
 
 export async function loadRules() {
   try {
@@ -33,6 +52,16 @@ export async function loadRules() {
 
 async function saveRules(rules) {
   await RULES_DOC.set({ list: rules });
+}
+
+app.get('/api/config', (req, res) => {
+  res.json({ storeName: STORE_NAME, shop: process.env.SHOPIFY_SHOP || null, dryRun: DRY_RUN, rulesDoc: RULES_DOC_ID });
+});
+
+// Backfills write metafields/tags directly, so they are switched off in dry-run mode.
+function blockedInDryRun(req, res, next) {
+  if (!DRY_RUN) return next();
+  res.status(409).json({ ok: false, message: 'Backfills are disabled while DRY_RUN=true' });
 }
 
 app.get('/api/rules', async (req, res) => { res.json(await loadRules()); });
@@ -71,19 +100,19 @@ app.post('/api/run-genres', async (req, res) => {
   runGenreTagger().catch(err => log('error', err.message));
 });
 
-app.post('/api/backfill-product-prefix', async (req, res) => {
+app.post('/api/backfill-product-prefix', blockedInDryRun, async (req, res) => {
   res.json({ ok: true, message: 'Product: prefix cleanup started — check Railway logs' });
   const { backfillRemoveProductPrefix } = await import('./backfill-remove-product-prefix.js');
   backfillRemoveProductPrefix().catch(err => log('error', err.message));
 });
 
-app.post('/api/backfill-collection-genres', async (req, res) => {
+app.post('/api/backfill-collection-genres', blockedInDryRun, async (req, res) => {
   res.json({ ok: true, message: 'Collection genre backfill started — check Railway logs' });
   const { backfillCollectionGenres } = await import('./backfill-collection-genres.js');
   backfillCollectionGenres().catch(err => log('error', err.message));
 });
 
-app.post('/api/backfill-preorder-dates', async (req, res) => {
+app.post('/api/backfill-preorder-dates', blockedInDryRun, async (req, res) => {
   res.json({ ok: true, message: 'Pre-order date backfill started — check Railway logs' });
   const { backfillPreorderDates } = await import('./backfill-preorder-dates.js');
   backfillPreorderDates().catch(err => log('error', err.message));
@@ -92,7 +121,15 @@ app.post('/api/backfill-preorder-dates', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => log('info', `🌐 Rules UI at http://localhost:${PORT}`));
 
+// Starter rules for a store with nothing saved yet: default-rules.json if present
+// (a snapshot of the Warner Music Australia rule set), else the built-in list below.
 function getDefaultRules() {
+  try {
+    const seeded = JSON.parse(fs.readFileSync(path.join(__dirname, 'default-rules.json'), 'utf8'));
+    if (Array.isArray(seeded) && seeded.length > 0) return seeded;
+  } catch {
+    // no seed file, or unreadable: fall through to the built-in defaults
+  }
   return [
     {
       id: '1', enabled: true, autoRemove: true,

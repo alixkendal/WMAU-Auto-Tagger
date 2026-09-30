@@ -1,0 +1,644 @@
+[
+  {
+    "id": "1",
+    "enabled": true,
+    "description": "New arrivals",
+    "conditions": [
+      {
+        "condition": "created_within_days",
+        "conditionValue": "90",
+        "logic": null
+      }
+    ],
+    "tags": "New Arrival"
+  },
+  {
+    "id": "2",
+    "enabled": true,
+    "description": "Hats",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_is",
+        "conditionValue": "hat"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "beanie"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "hats"
+      }
+    ],
+    "tags": "Hat, Merch, Accessories",
+    "autoRemove": false,
+    "type": "standard"
+  },
+  {
+    "id": "3",
+    "enabled": true,
+    "description": "Jewellery",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_is",
+        "conditionValue": "Bracelet"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Necklace"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Earrings"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Pendant"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Jewellery"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Jewelry"
+      }
+    ],
+    "tags": "Jewellery, Merch, Accessories",
+    "autoRemove": false,
+    "type": "standard"
+  },
+  {
+    "id": "4",
+    "enabled": true,
+    "description": "Bags",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_is",
+        "conditionValue": "Bum Bag"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Tote"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Bag"
+      }
+    ],
+    "tags": "Bag, Merch, Accessories",
+    "autoRemove": false,
+    "type": "standard"
+  },
+  {
+    "id": "5",
+    "enabled": true,
+    "description": "Vinyl",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "Vinyl"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "LP"
+      }
+    ],
+    "tags": "Vinyl, Music",
+    "autoRemove": false,
+    "type": "standard"
+  },
+  {
+    "id": "6",
+    "enabled": true,
+    "description": "Last Chance (Low Stock) Merch",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "inventory_lt",
+        "conditionValue": "5"
+      },
+      {
+        "logic": "AND",
+        "condition": "has_tag",
+        "conditionValue": "Merch"
+      },
+      {
+        "logic": "AND",
+        "condition": "inventory_gt",
+        "conditionValue": "0"
+      },
+      {
+        "logic": "AND",
+        "condition": "has_tag",
+        "conditionValue": "discount"
+      }
+    ],
+    "tags": "Last Chance Merch",
+    "type": "standard",
+    "autoRemove": true
+  },
+  {
+    "description": "T-Shirts",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "T-Shirt"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "Tshirt"
+      }
+    ],
+    "tags": "T-Shirt, Merch, Apparel",
+    "id": "1775159475565",
+    "enabled": true,
+    "autoRemove": false,
+    "type": "standard"
+  },
+  {
+    "description": "Pre-Orders",
+    "type": "release_date",
+    "metafieldKey": "pre_order_date",
+    "beforeTag": "Pre-Order",
+    "afterTag": "Just In",
+    "windowDays": "14",
+    "id": "1775751790956",
+    "enabled": true,
+    "generateRdTag": true,
+    "keepRdTag": true
+  },
+  {
+    "description": "Back-Orders",
+    "type": "release_date",
+    "metafieldKey": "back_order_date",
+    "beforeTag": "Back-Order",
+    "afterTag": "Restock",
+    "windowDays": "14",
+    "id": "1775751824947",
+    "enabled": true,
+    "generateRdTag": false,
+    "keepRdTag": true
+  },
+  {
+    "description": "Box Sets",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "Box Set"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "Boxset"
+      }
+    ],
+    "tags": "Boxset, Music",
+    "autoRemove": false,
+    "id": "1778188726549",
+    "enabled": true
+  },
+  {
+    "description": "CDs",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "CD"
+      }
+    ],
+    "tags": "CD, Music",
+    "autoRemove": false,
+    "id": "1778188764819",
+    "enabled": true
+  },
+  {
+    "description": "Cassettes",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "Cassette"
+      }
+    ],
+    "tags": "Cassette, Music",
+    "autoRemove": false,
+    "id": "1778188954775",
+    "enabled": true
+  },
+  {
+    "description": "DVDs",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "DVD"
+      }
+    ],
+    "tags": "DVD, Music",
+    "autoRemove": false,
+    "id": "1778189027599",
+    "enabled": true
+  },
+  {
+    "description": "Blu-Rays",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "blu-ray"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "bluray"
+      }
+    ],
+    "tags": "Blu-Ray, Music",
+    "autoRemove": false,
+    "id": "1778189071104",
+    "enabled": true
+  },
+  {
+    "description": "VHS Tapes",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "VHS"
+      }
+    ],
+    "tags": "VHS, VHS Tape, Music",
+    "autoRemove": false,
+    "id": "1778189110172",
+    "enabled": true
+  },
+  {
+    "description": "Sweaters",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "crewneck"
+      },
+      {
+        "logic": "OR",
+        "condition": "title_contains",
+        "conditionValue": "crewneck"
+      },
+      {
+        "logic": "OR",
+        "condition": "title_contains",
+        "conditionValue": "sweater"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "sweater"
+      }
+    ],
+    "tags": "Sweater, Apparel, Merch",
+    "autoRemove": false,
+    "id": "1778189359443",
+    "enabled": true
+  },
+  {
+    "description": "Hoodies",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "hoodie"
+      },
+      {
+        "logic": "OR",
+        "condition": "title_contains",
+        "conditionValue": "hoodie"
+      }
+    ],
+    "tags": "Hoodie, Sweater, Apparel, Merch",
+    "autoRemove": false,
+    "id": "1778189657536",
+    "enabled": true
+  },
+  {
+    "description": "Jackets",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "jacket"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "windbreaker"
+      }
+    ],
+    "tags": "Jacket, Apparel, Merch",
+    "autoRemove": false,
+    "id": "1778189860182",
+    "enabled": true
+  },
+  {
+    "description": "Exclusives",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "has_tag",
+        "conditionValue": "Page:Exclusive"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "StoreExclusive"
+      }
+    ],
+    "tags": "Exclusive",
+    "autoRemove": false,
+    "id": "1779156827535",
+    "enabled": true
+  },
+  {
+    "description": "Sale",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "on_sale",
+        "conditionValue": ""
+      }
+    ],
+    "tags": "On Sale",
+    "autoRemove": true,
+    "id": "1779159994010",
+    "enabled": true
+  },
+  {
+    "description": "Indie Rock -> Rock Tag",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "has_tag",
+        "conditionValue": "Genre:Indie Rock"
+      }
+    ],
+    "tags": "Genre:Rock",
+    "autoRemove": false,
+    "id": "1781189314340",
+    "enabled": true
+  },
+  {
+    "description": "Posters, Prints & Wall Hangings",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_is",
+        "conditionValue": "Poster"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Print Set"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Pennant"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Banner"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Flag"
+      }
+    ],
+    "tags": "Home Goods, Wall Hanging, Merch",
+    "autoRemove": false,
+    "id": "1781196776603",
+    "enabled": true
+  },
+  {
+    "description": "Drinkware",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "Bottle"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "Mug"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "Cup"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "Glass"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_contains",
+        "conditionValue": "Flask"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Bottle"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Mug"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Tumbler"
+      }
+    ],
+    "tags": "Drinkware, Home Goods, Merch",
+    "autoRemove": false,
+    "id": "1781197167871",
+    "enabled": true
+  },
+  {
+    "description": "Books & Stationery",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "Book"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Book"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Stationery"
+      },
+      {
+        "logic": "OR",
+        "condition": "title_contains",
+        "conditionValue": "stationery"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Notebook"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Photobook"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Book"
+      }
+    ],
+    "tags": "Books & Stationery, Home Goods, Merch",
+    "autoRemove": false,
+    "id": "1781197465176",
+    "enabled": true
+  },
+  {
+    "description": "Pins & Patches",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "product_type_contains",
+        "conditionValue": "Pin"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Pin Set"
+      },
+      {
+        "logic": "OR",
+        "condition": "product_type_is",
+        "conditionValue": "Patch"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Pin"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Pin Set"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Patch"
+      }
+    ],
+    "tags": "Pins & Patches, Accessories, Merch",
+    "autoRemove": false,
+    "id": "1781198038846",
+    "enabled": true
+  },
+  {
+    "description": "Hip-Hop/Rap Tag",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "has_tag",
+        "conditionValue": "Genre: Hip Hop"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Genre:Rap / Hip Hop"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Genre: Hip-Hop"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Genre:Rap"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Genre: Rap"
+      }
+    ],
+    "tags": "Genre:Hip-Hop",
+    "autoRemove": false,
+    "id": "1784070334592",
+    "enabled": true
+  },
+  {
+    "description": "Electronic / Dance",
+    "type": "standard",
+    "conditions": [
+      {
+        "logic": null,
+        "condition": "has_tag",
+        "conditionValue": "Genre:Dance"
+      },
+      {
+        "logic": "OR",
+        "condition": "has_tag",
+        "conditionValue": "Genre: Dance"
+      }
+    ],
+    "tags": "Genre:Electronic",
+    "autoRemove": false,
+    "id": "1784093066110",
+    "enabled": true
+  }
+]
