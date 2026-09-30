@@ -392,36 +392,12 @@ function getConditionRows() {
   }).filter(c => c.conditionValue || c.condition === 'on_sale');
 }
 
-// Every call to this app's API. Inside the Shopify admin, App Bridge provides an ID
-// token that proves which store user is asking; it is sent explicitly here rather than
-// relying on App Bridge's fetch interceptor.
-async function api(url, options = {}) {
-  const headers = { ...(options.headers || {}) };
-  if (window.shopify?.idToken) {
-    try { headers.Authorization = `Bearer ${await window.shopify.idToken()}`; } catch { /* sent without; the server decides */ }
-  }
-  const res = await fetch(url, { ...options, headers });
-  if (res.status === 401) showSignedOut();
-  return res;
-}
-
-function showSignedOut() {
-  document.getElementById('store-name').textContent = 'Open the Auto-Tagger from your Shopify admin to use it.';
-  document.querySelector('.page').style.display = 'none';
-  document.getElementById('run-btn').style.display = 'none';
-}
-
 async function load() {
-  const cfgRes = await api('/api/config');
-  if (!cfgRes.ok) return;
-  const cfg = await cfgRes.json();
-  document.getElementById('store-name').textContent = cfg.storeName
-    + (cfg.dryRun ? ' — DRY RUN (nothing is written)' : '')
-    + (cfg.signedInVia === 'shopify' ? ' · signed in via Shopify' : '');
-  document.title = 'Auto-Tagger Rules — ' + cfg.storeName;
-  const rulesRes = await api('/api/rules');
-  if (!rulesRes.ok) return;
-  rules = await rulesRes.json();
+  fetch('/api/config').then(r => r.json()).then(cfg => {
+    document.getElementById('store-name').textContent = cfg.storeName + (cfg.dryRun ? ' — DRY RUN (nothing is written)' : '');
+    document.title = 'Auto-Tagger Rules — ' + cfg.storeName;
+  }).catch(() => {});
+  rules = await fetch('/api/rules').then(r => r.json());
   render();
 }
 
@@ -472,13 +448,13 @@ function render() {
 
 async function toggleRule(id) {
   const rule = rules.find(r=>r.id===id);
-  await api(`/api/rules/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!rule.enabled})});
+  await fetch(`/api/rules/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!rule.enabled})});
   rule.enabled=!rule.enabled; render();
 }
 
 async function deleteRule(id) {
   if(!confirm('Delete this rule?')) return;
-  await api(`/api/rules/${id}`,{method:'DELETE'});
+  await fetch(`/api/rules/${id}`,{method:'DELETE'});
   rules=rules.filter(r=>r.id!==id); render();
 }
 
@@ -529,10 +505,10 @@ async function saveRule() {
   }
 
   if (editingId) {
-    const res = await api(`/api/rules/${editingId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await fetch(`/api/rules/${editingId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     rules[rules.findIndex(r=>r.id===editingId)] = await res.json();
   } else {
-    const res = await api('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await fetch('/api/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     rules.push(await res.json());
   }
   closeModal(); render();
@@ -544,7 +520,7 @@ async function runPreorderBackfill() {
   btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
   document.getElementById('status-dot').classList.remove('idle');
   document.getElementById('status-text').textContent='Pre-order date backfill in progress…';
-  await api('/api/backfill-preorder-dates',{method:'POST'});
+  await fetch('/api/backfill-preorder-dates',{method:'POST'});
   setTimeout(()=>{
     btn.textContent='Done ✓'; btn.disabled=true;
     document.getElementById('status-dot').classList.add('idle');
@@ -557,7 +533,7 @@ async function runGenreNow() {
   btn.textContent='Syncing…'; btn.classList.add('running'); btn.disabled=true;
   document.getElementById('status-dot').classList.remove('idle');
   document.getElementById('status-text').textContent='Genre sync in progress…';
-  await api('/api/run-genres',{method:'POST'});
+  await fetch('/api/run-genres',{method:'POST'});
   setTimeout(()=>{
     btn.textContent='Sync genres now'; btn.classList.remove('running'); btn.disabled=false;
     document.getElementById('status-dot').classList.add('idle');
@@ -570,7 +546,7 @@ async function runNow() {
   btn.textContent='Running…'; btn.classList.add('running'); btn.disabled=true;
   document.getElementById('status-dot').classList.remove('idle');
   document.getElementById('status-text').textContent='Tagging run in progress…';
-  await api('/api/run-now',{method:'POST'});
+  await fetch('/api/run-now',{method:'POST'});
   setTimeout(()=>{
     btn.textContent='Run now'; btn.classList.remove('running'); btn.disabled=false;
     document.getElementById('status-dot').classList.add('idle');

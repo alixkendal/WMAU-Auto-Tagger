@@ -1,5 +1,4 @@
 import express from 'express';
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,89 +10,17 @@ import { log } from './logger.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// ---------------------------------------------------------------------------
-// Who may use the rules UI + API
-//
-// 1. Shopify admin users: the app is embedded in the store's admin, where App
-//    Bridge attaches a short-lived ID token (a JWT signed with this app's client
-//    secret) to every request. Nothing for staff to log in to.
-// 2. ADMIN_PASSWORD (optional): HTTP Basic, for opening the Railway URL directly.
-//
-// Access is enforced when REQUIRE_SHOPIFY_AUTH=true or ADMIN_PASSWORD is set.
-// With neither, the service is open to anyone with the URL.
-// ---------------------------------------------------------------------------
-const CLIENT_ID      = process.env.SHOPIFY_CLIENT_ID;
-const CLIENT_SECRET  = process.env.SHOPIFY_CLIENT_SECRET;
+// Optional password for the rules UI + API. Set ADMIN_PASSWORD to turn it on
+// (any username). Without it the service is open to anyone with the URL.
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const AUTH_REQUIRED  = process.env.REQUIRE_SHOPIFY_AUTH === 'true' || Boolean(ADMIN_PASSWORD);
-const shopHost = (process.env.SHOPIFY_SHOP || '').trim().toLowerCase();
-
-function hostOf(url) {
-  try { return new URL(url).hostname.toLowerCase(); } catch { return null; }
+if (ADMIN_PASSWORD) {
+  app.use((req, res, next) => {
+    const [scheme, encoded] = (req.headers.authorization || '').split(' ');
+    const password = scheme === 'Basic' ? Buffer.from(encoded || '', 'base64').toString().split(':').slice(1).join(':') : '';
+    if (password === ADMIN_PASSWORD) return next();
+    res.set('WWW-Authenticate', 'Basic realm="Auto-Tagger"').status(401).send('Authentication required');
+  });
 }
-
-// True only for an unexpired Shopify ID token issued to this app for this store.
-function isValidShopifyToken(token) {
-  if (!token || !CLIENT_ID || !CLIENT_SECRET) return false;
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  const [header, payload, signature] = parts;
-  try {
-    if (JSON.parse(Buffer.from(header, 'base64url').toString()).alg !== 'HS256') return false;
-    const expected = crypto.createHmac('sha256', CLIENT_SECRET).update(`${header}.${payload}`).digest();
-    const given = Buffer.from(signature, 'base64url');
-    if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return false;
-
-    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString());
-    const now = Date.now() / 1000;
-    const LEEWAY = 10; // seconds of clock drift tolerated
-    if (!(claims.exp > now - LEEWAY) || !(claims.nbf <= now + LEEWAY)) return false;
-    if (claims.aud !== CLIENT_ID) return false;
-    const dest = hostOf(claims.dest);
-    return Boolean(dest) && dest === hostOf(claims.iss) && dest === shopHost;
-  } catch {
-    return false;
-  }
-}
-
-function hasValidPassword(req) {
-  if (!ADMIN_PASSWORD) return false;
-  const [scheme, encoded] = (req.headers.authorization || '').split(' ');
-  if (scheme !== 'Basic') return false;
-  const given = Buffer.from(Buffer.from(encoded || '', 'base64').toString().split(':').slice(1).join(':'));
-  const expected = Buffer.from(ADMIN_PASSWORD);
-  return given.length === expected.length && crypto.timingSafeEqual(given, expected);
-}
-
-function authMethod(req) {
-  const [scheme, token] = (req.headers.authorization || '').split(' ');
-  if (scheme === 'Bearer' && isValidShopifyToken(token)) return 'shopify';
-  if (hasValidPassword(req)) return 'password';
-  return null;
-}
-
-// The rules page. Inside the Shopify admin (Shopify adds ?embedded=1&host=…) it is
-// served with App Bridge, which supplies the ID tokens. Opened directly, it asks for
-// ADMIN_PASSWORD when one is set.
-const INDEX_HTML = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
-const APP_BRIDGE = CLIENT_ID
-  ? `<meta name="shopify-api-key" content="${CLIENT_ID}">\n<script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>\n`
-  : '';
-
-app.get(['/', '/index.html'], (req, res) => {
-  const embedded = req.query.embedded === '1' || Boolean(req.query.host);
-  if (!embedded && ADMIN_PASSWORD && !hasValidPassword(req)) {
-    return res.set('WWW-Authenticate', 'Basic realm="Auto-Tagger"').status(401).send('Authentication required');
-  }
-  res.type('html').send(embedded ? INDEX_HTML.replace('<head>\n', `<head>\n${APP_BRIDGE}`) : INDEX_HTML);
-});
-
-// No WWW-Authenticate challenge here: a browser login box can't work inside the admin frame.
-app.use('/api', (req, res, next) => {
-  req.authMethod = authMethod(req);
-  if (req.authMethod || !AUTH_REQUIRED) return next();
-  res.status(401).json({ error: 'Open the Auto-Tagger from your Shopify admin to use it.' });
-});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -153,10 +80,7 @@ async function saveRules(rules) {
 }
 
 app.get('/api/config', (req, res) => {
-  res.json({
-    storeName: STORE_NAME, shop: process.env.SHOPIFY_SHOP || null, dryRun: DRY_RUN, rulesDoc: RULES_DOC_ID,
-    authRequired: AUTH_REQUIRED, signedInVia: req.authMethod,
-  });
+  res.json({ storeName: STORE_NAME, shop: process.env.SHOPIFY_SHOP || null, dryRun: DRY_RUN, rulesDoc: RULES_DOC_ID });
 });
 
 // Backfills write metafields/tags directly, so they are switched off in dry-run mode.
