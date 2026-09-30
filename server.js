@@ -131,12 +131,6 @@ app.post('/api/backfill-product-prefix', blockedInDryRun, async (req, res) => {
   backfillRemoveProductPrefix().catch(err => log('error', err.message));
 });
 
-app.post('/api/backfill-collection-genres', blockedInDryRun, async (req, res) => {
-  res.json({ ok: true, message: 'Collection genre backfill started — check Railway logs' });
-  const { backfillCollectionGenres } = await import('./backfill-collection-genres.js');
-  backfillCollectionGenres().catch(err => log('error', err.message));
-});
-
 app.post('/api/backfill-preorder-dates', blockedInDryRun, async (req, res) => {
   res.json({ ok: true, message: 'Pre-order date backfill started — check Railway logs' });
   const { backfillPreorderDates } = await import('./backfill-preorder-dates.js');
